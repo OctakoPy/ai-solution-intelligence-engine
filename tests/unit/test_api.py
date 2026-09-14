@@ -49,6 +49,7 @@ async def test_gpu_levels(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_ingest(client: AsyncClient) -> None:
     resp = await client.post("/api/ingest", json={"max_entries": 3})
     assert resp.status_code == 200
@@ -59,6 +60,7 @@ async def test_ingest(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_pipeline_views(client: AsyncClient) -> None:
     await client.post("/api/ingest", json={"max_entries": 3})
     resp = await client.get("/api/pipeline/views?max_entries=3")
@@ -87,6 +89,7 @@ async def test_pipeline_views(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_categories(client: AsyncClient) -> None:
     await client.post("/api/ingest", json={"max_entries": 3})
     resp = await client.get("/api/categories?max_entries=3")
@@ -95,6 +98,7 @@ async def test_categories(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_sources(client: AsyncClient) -> None:
     await client.post("/api/ingest", json={"max_entries": 3})
     resp = await client.get("/api/sources?max_entries=3")
@@ -105,6 +109,7 @@ async def test_sources(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_search(client: AsyncClient) -> None:
     await client.post("/api/ingest", json={"max_entries": 3})
     resp = await client.post(
@@ -130,6 +135,7 @@ async def test_search(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_search_surfaces_multilingual(client: AsyncClient) -> None:
     resp = await client.post(
         "/api/search",
@@ -148,6 +154,7 @@ async def test_search_surfaces_multilingual(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_chat_start(client: AsyncClient) -> None:
     await client.post("/api/ingest", json={"max_entries": 3})
     resp = await client.post(
@@ -160,6 +167,7 @@ async def test_chat_start(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_chat_respond(client: AsyncClient) -> None:
     await client.post("/api/ingest", json={"max_entries": 3})
     await client.post(
@@ -176,6 +184,7 @@ async def test_chat_respond(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_chat_low_confidence_escalates(client: AsyncClient) -> None:
     await client.post("/api/ingest", json={"max_entries": 12})
     resp = await client.post(
@@ -193,6 +202,7 @@ async def test_chat_low_confidence_escalates(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_analytics_overview(client: AsyncClient) -> None:
     await client.post("/api/ingest", json={"max_entries": 3})
     resp = await client.get("/api/analytics/overview?max_entries=3")
@@ -213,6 +223,7 @@ async def test_analytics_overview(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_analytics_overview_flagged(client: AsyncClient) -> None:
     await client.post("/api/ingest", json={"max_entries": 12})
     resp = await client.get("/api/analytics/overview?max_entries=12")
@@ -224,6 +235,7 @@ async def test_analytics_overview_flagged(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.slow
 async def test_full_dataset_duplicate_policy(client: AsyncClient) -> None:
     """On the full dataset: exact dups rejected, near dups flagged, rest added."""
     await client.post("/api/ingest", json={"max_entries": 76})

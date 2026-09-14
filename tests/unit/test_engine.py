@@ -110,6 +110,7 @@ def test_ai_judge_rejects_one_off():
     assert not result.passed or result.overall < result.threshold
 
 
+@pytest.mark.slow
 def test_embeddings_similarity():
     embedder = LocalEmbedder()
     a = embedder.embed("SAP authorization error on financial reports")
@@ -118,6 +119,7 @@ def test_embeddings_similarity():
     assert embedder.similarity(a, b) > embedder.similarity(a, c)
 
 
+@pytest.mark.slow
 def test_embeddings_multilingual_cross_lingual():
     embedder = LocalEmbedder()
     doc_en = embedder.embed("User cannot access FI reports in SAP, authorization error")
@@ -166,6 +168,7 @@ def test_dataset_has_multilingual_entries():
         assert e.english_title and e.english_description and e.english_resolution
 
 
+@pytest.mark.slow
 def test_knowledge_index_query():
     index = KnowledgeIndex(embedder=LocalEmbedder())
     index.add(make_entry(entry_id="A", title="VPN keeps disconnecting"))
@@ -175,6 +178,7 @@ def test_knowledge_index_query():
     assert results[0].entry.id == "A"
 
 
+@pytest.mark.slow
 def test_duplicate_checker_tiers():
     embedder = LocalEmbedder()
     checker = DuplicateChecker(embedder)
@@ -207,6 +211,7 @@ def test_resolution_time_by_category():
     assert "min" in fmt or "h" in fmt
 
 
+@pytest.mark.slow
 def test_pipeline_flags_near_duplicate_for_human_review(dataset):
     from solution_intelligence.service import SolutionEngine
 
@@ -218,6 +223,7 @@ def test_pipeline_flags_near_duplicate_for_human_review(dataset):
     assert all(s.label for s in flagged)
 
 
+@pytest.mark.slow
 def test_pipeline_rejects_duplicates_and_indexes_only_unique():
     """Duplicate entries (exact or near) are rejected, not indexed."""
     from solution_intelligence.service import SolutionEngine
