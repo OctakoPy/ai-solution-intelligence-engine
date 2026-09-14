@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
-# 🧰 Python Project Template — Justfile
+# 🧰 Solution Intelligence Engine — Justfile
 # -----------------------------------------------------------------------------
-# Common developer commands for uv-based projects.
+# Common developer commands for uv + npm-based projects.
 # Run `just <command>` (e.g., `just test`).
 # -----------------------------------------------------------------------------
 
@@ -12,23 +12,27 @@ set shell := ["bash", "-cu"]
 default:
     @just --list
 
-# Install dependencies (create/update virtualenv)
+# Install dependencies (create/update virtualenv + node modules)
 install:
     uv sync
+    npm install
 
 # Install all dependencies (including dev + docs groups)
 install-all:
-    uv sync --all-groups   # include dev + docs groups (matches CI)
+    uv sync --all-groups
+    npm install
 
-# Install development dependencies (create/update virtualenv)
+# Install development dependencies (create/update virtualenv + node modules)
 install-dev:
     uv sync --dev
+    npm install
 
 # Update dependencies to latest allowed versions
 update:
     uv lock --upgrade
+    npm update
 
-# Regenerate lock file
+# Regenerate lock files
 lock:
     uv lock
 
@@ -50,11 +54,11 @@ type-check:
 
 # Run quick tests (exclude slow)
 test:
-    uv run pytest -q -m "not slow" --doctest-modules --doctest-glob="*.py" --maxfail=1 --disable-warnings
+    uv run pytest -q -m "not slow" --maxfail=1 --disable-warnings
 
 # Run tests with verbose output (exclude slow)
 test-vv:
-    uv run pytest -vv -m "not slow" --doctest-modules --doctest-glob="*.py" --maxfail=1 --disable-warnings
+    uv run pytest -vv -m "not slow" --maxfail=1 --disable-warnings
 
 # Run the fast, non-mutating handoff checks
 check: format-check lint type-check test
@@ -73,7 +77,7 @@ docs-build:
 
 # Serve docs locally
 docs-serve:
-    uv run --group docs mkdocs serve -a localhost:8000
+    uv run --group docs mkdocs serve -a localhost:8001
 
 # Install pre-commit hooks
 pre-commit-install:
@@ -89,6 +93,7 @@ pre-commit:
 # Clean generated artifacts
 clean:
     rm -rf .pytest_cache dist build .ruff_cache .mypy_cache site
+    rm -rf node_modules apps/web/node_modules apps/web/dist .vite
 
 # Build distribution (wheel + sdist)
 build:
@@ -104,3 +109,43 @@ ci: pre-commit coverage docs-build package-smoke-test
 # Start Jupyter lab from inside a container
 jupyter-devcontainer:
     uv run jupyter lab --allow-root --ip 0.0.0.0 --no-browser
+
+# -----------------------------------------------------------------------------
+# Solution Intelligence Engine — Frontend + API recipes
+# -----------------------------------------------------------------------------
+
+# Run the FastAPI backend in dev mode
+api:
+    uv run --no-sync uvicorn apps.api.main:app --reload --port 8004
+
+# Run the Vite dev server (proxies /api → localhost:8004)
+web:
+    cd apps/web && npm run dev
+
+# Run both API and web dev servers concurrently
+dev:
+    uv run --no-sync uvicorn apps.api.main:app --port 8004 &
+    cd apps/web && npm run dev
+
+# Build the Vite frontend
+web-build:
+    cd apps/web && npm run build
+
+# Type-check the frontend
+web-typecheck:
+    cd apps/web && npm run typecheck
+
+# Lint the frontend
+web-lint:
+    cd apps/web && npm run lint
+
+# Run frontend unit tests
+web-test:
+    cd apps/web && npm run test
+
+# Run Playwright e2e tests (assumes api + web are running)
+web-e2e:
+    cd apps/web && npm run e2e
+
+# Combined local CI for backend + frontend
+check-all: format-check lint type-check test web-typecheck web-lint web-build

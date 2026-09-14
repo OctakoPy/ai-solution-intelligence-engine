@@ -18,9 +18,10 @@
   },
   "features": {
     "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:1": {}
   },
-  "forwardPorts": [],
+  "forwardPorts": [5179, 8004],
   "name": "Python 3",
-  "postCreateCommand": "uv sync --all-groups && just pre-commit-install && just pre-commit"
+  "postCreateCommand": "uv sync --all-groups && npm install && just pre-commit-install && just pre-commit"
 }
