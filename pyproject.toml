@@ -49,9 +49,6 @@ omit = [
 pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "-q"
-markers = [
-    "slow: downloads/embeds with the real sentence-transformer model (excluded from quick runs)",
-]
 
 [build-system]
 requires = ["uv-build>=0.11.29,<1.0"]

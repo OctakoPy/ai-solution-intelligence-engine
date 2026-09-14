@@ -14,7 +14,6 @@ def engine():
     return eng
 
 
-@pytest.mark.slow
 def test_ingest_indexes_more_than_rejected(engine):
     """Most curated entries should be ingested; junk/restricted rejected."""
     assert engine.index.size > 0
@@ -22,7 +21,6 @@ def test_ingest_indexes_more_than_rejected(engine):
     assert len(engine.last_run.rejected) >= 0
 
 
-@pytest.mark.slow
 def test_search_returns_solutions(engine):
     results = engine.search("SAP FI report access denied authorization error", top_k=3)
     assert results
@@ -30,7 +28,6 @@ def test_search_returns_solutions(engine):
     assert all(0.0 <= r.combined_score <= 1.0 for r in results)
 
 
-@pytest.mark.slow
 def test_agent_chat_flow(engine):
     session = engine.agent.start("s1", "VPN keeps dropping on Windows 11")
     assert session.turns
@@ -38,7 +35,6 @@ def test_agent_chat_flow(engine):
     assert len(session.turns) == 2
 
 
-@pytest.mark.slow
 def test_confidence_reflects_history(engine):
     results = engine.search("SAP authorization error on FI reports", top_k=5)
     high = next(r for r in results if r.entry.worked > r.entry.attempted * 0.7)
