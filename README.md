@@ -1,7 +1,4 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
-[![CI](https://github.com/OctakoPy/ai-solution-intelligence-engine/actions/workflows/ci.yaml/badge.svg?branch=main)](.github/workflows/ci.yaml)
-[![Frontend](https://github.com/OctakoPy/ai-solution-intelligence-engine/actions/workflows/ci.yaml/badge.svg?branch=main)](apps/web)
-[![Docs (GitHub Pages)](https://github.com/OctakoPy/ai-solution-intelligence-engine/actions/workflows/docs-pages.yaml/badge.svg)](https://github.com/OctakoPy/ai-solution-intelligence-engine/actions/workflows/docs-pages.yaml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
