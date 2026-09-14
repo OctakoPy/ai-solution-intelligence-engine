@@ -1,20 +1,20 @@
 {
-  "name": "solution-intelligence-engine",
-  "version": "0.10.0",
-  "private": true,
   "description": "Monorepo root for the Solution Intelligence Engine (Python backend + Vite/React frontend).",
-  "workspaces": [
-    "apps/web"
-  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "name": "solution-intelligence-engine",
+  "private": true,
   "scripts": {
     "web": "npm run dev --workspace apps/web",
     "web:build": "npm run build --workspace apps/web",
-    "web:typecheck": "npm run typecheck --workspace apps/web",
+    "web:e2e": "npm run e2e --workspace apps/web",
     "web:lint": "npm run lint --workspace apps/web",
     "web:test": "npm run test --workspace apps/web",
-    "web:e2e": "npm run e2e --workspace apps/web"
+    "web:typecheck": "npm run typecheck --workspace apps/web"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  }
+  "version": "0.10.0",
+  "workspaces": [
+    "apps/web"
+  ]
 }

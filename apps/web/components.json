@@ -1,17 +1,17 @@
 {
-  "name": "Solution Intelligence Engine",
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "default",
-  "rsc": false,
-  "tsx": true,
-  "tailwind": {
-    "config": "tailwind.config.ts",
-    "css": "src/styles/globals.css",
-    "baseColor": "slate",
-    "cssVariables": false
-  },
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils"
-  }
+  },
+  "name": "Solution Intelligence Engine",
+  "rsc": false,
+  "style": "default",
+  "tailwind": {
+    "baseColor": "slate",
+    "config": "tailwind.config.ts",
+    "css": "src/styles/globals.css",
+    "cssVariables": false
+  },
+  "tsx": true
 }

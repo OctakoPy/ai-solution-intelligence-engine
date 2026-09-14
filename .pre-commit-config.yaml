@@ -34,7 +34,12 @@ repos:
     rev: v2.3.0
     hooks:
       - id: codespell
-        args: ["--skip", "uv.lock,dist,build,.venv,*.min.js"]
+        args:
+          - "--skip"
+          - "uv.lock,dist,build,.venv,*.min.js"
+          # Intentional: informal ticket voice and Malay words in the demo dataset
+          - "--ignore-words-list"
+          - "wont,cant,whats,modul,lama"
         exclude: |
           (?x)(
             ^docs/_build/|
