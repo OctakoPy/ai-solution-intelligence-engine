@@ -94,7 +94,7 @@ per page.
   `st.button` per item inside a `st.container`. Decision: **`st.radio` styled
   via CSS** (one widget, on_change hook, reliable active-state) with label vs
   value mapping. Keys preserved in `st.session_state["page"]`.
-- "System Status" bottom card: green dot + "All systems operational", 
+- "System Status" bottom card: green dot + "All systems operational",
   "Compute Speed: GPU Level 2" (from global state), "Dataset Size: Small (8)"
   (from global state).
 - Demo settings belongs to this card (or below divider): GPU level `st.selectbox`
