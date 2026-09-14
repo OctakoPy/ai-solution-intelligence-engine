@@ -1,6 +1,6 @@
 [project]
 name = "solution-intelligence"
-version = "0.10.0"
+version = "0.11.0"
 description = "AI-powered enterprise knowledge intelligence system that unifies ticketing, SAP, SharePoint, and knowledge base systems to resolve support issues instantly."
 authors = [
     {name = "Octako",email = "octakopy@gmail.com"}

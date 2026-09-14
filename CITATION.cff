@@ -1,7 +1,9 @@
 cff-version: 1.2.0
-message: If you use Solution Intelligence Engine in your research, please cite it as below.
+message: >-
+  If you use Solution Intelligence Engine in your research, please cite it as
+  below.
 title: 'Solution Intelligence Engine: AI-powered solution analysis.'
-version: 0.10.0
+version: 0.11.0
 date-released: '2026-07-18'
 authors:
   - family-names: Octako
