@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --navy-900: #0c172f;
+    --navy-700: #1a366b;
+    --blue-600: #175fee;
+    --blue-50: #eaf1ff;
+    --green-600: #0e9354;
+    --red-500: #e5484d;
+    --red-soft: #f4a6ac;
+    --amber-500: #fdb84e;
+    --gray-900: #111827;
+    --gray-500: #6b7280;
+    --gray-200: #e5e7eb;
+    --gray-50: #f7f8fa;
+    --white: #ffffff;
+
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      Helvetica, Arial, sans-serif;
+  }
+
+  * {
+    border-color: theme(colors.gray.200);
+  }
+
+  body {
+    @apply bg-gray-50 font-sans text-gray-900 antialiased;
+    font-family: var(--font-sans);
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer base {
+  ::selection {
+    background: theme(colors.blue.50);
+  }
+}
+
+@layer components {
+  .shadow-card {
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  }
+
+  .animate-expand {
+    animation: expand 200ms ease-out;
+  }
+
+  @keyframes expand {
+    from {
+      opacity: 0;
+      max-height: 0;
+    }
+    to {
+      opacity: 1;
+      max-height: 500px;
+    }
+  }
+}

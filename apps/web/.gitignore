@@ -1,0 +1,27 @@
+# Build output
+dist
+
+# Dependencies
+node_modules
+
+# Vite
+.vite
+
+# Generated configs
+/.angular
+/.cache
+/.nyc_output
+/coverage
+/.next
+/.output
+/.vercel
+/.svelte-kit
+/.vite
+/.writable
+
+# Stray transpiled JS from accidental tsc emit
+/src/**/*.js
+/src/**/*.jsx
+/tests/**/*.js
+/tests/**/*.jsx
+/*.config.js
