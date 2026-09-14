@@ -154,6 +154,14 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# Node / npm
+node_modules/
+dist/
+
+# Playwright
+test-results/
+playwright-report/
+
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -208,3 +216,6 @@ __marimo__/
 
 # MacOS
 .DS_Store
+
+# Generated embedding cache (reproducible from static dataset)
+data/embedding_cache.json

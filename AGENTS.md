@@ -6,7 +6,7 @@ working on this Python project template.
 ## Repository overview
 
 - The distributable package uses a `src` layout and lives in
-  `src/package_name/`.
+  `src/solution_intelligence/`.
 - Unit tests live in `tests/unit/`; shared fixtures belong in
   `tests/conftest.py`.
 - Documentation is built with MkDocs Material from `docs/`.
@@ -43,6 +43,7 @@ Install the complete development environment with:
 
 ```bash
 uv sync --all-groups
+npm install
 ```
 
 Prefer the `just` recipes because they document the intended local workflow:
@@ -62,13 +63,23 @@ just build            # build wheel and source distribution
 just package-smoke-test # install and import the built wheel in isolation
 just ci               # comprehensive local CI equivalent
 just pre-commit       # all push-stage hooks
+
+# Solution Intelligence Engine — frontend + API
+just api              # FastAPI on :8004
+just web              # Vite dev on :5179 (proxies /api → :8004)
+just dev              # api + web concurrently
+just web-build        # production Vite build
+just web-typecheck    # tsc --noEmit
+just web-lint         # eslint
+just web-test         # vitest unit tests
+just web-e2e          # Playwright e2e tests (4 routes)
 ```
 
 For a focused test while iterating, run pytest through `uv`, for example:
 
 ```bash
-uv run pytest -q tests/unit/test_greet.py
-uv run pytest -q tests/unit/test_greet.py::test_say_hello
+uv run pytest -q tests/unit/test_engine.py
+uv run pytest -q tests/unit/test_engine.py::test_stage1_accepts_good
 ```
 
 Do not invoke tools from an unrelated global Python environment. If `just` is
@@ -76,8 +87,8 @@ not installed, run the corresponding `uv run ...` command from the `justfile`.
 
 ## Python code conventions
 
-- Put production code under `src/package_name/`, not at the repository root.
-- Use absolute imports from `package_name` in tests and consumer examples.
+- Put production code under `src/solution_intelligence/`, not at the repository root.
+- Use absolute imports from `solution_intelligence` in tests and consumer examples.
 - Use four spaces, UTF-8, LF line endings, and a final newline, as configured in
   `.editorconfig`.
 - Let Ruff determine formatting. Do not hand-format code against Ruff's output.
@@ -88,7 +99,7 @@ not installed, run the corresponding `uv run ...` command from the `justfile`.
   Examples in Python docstrings must be valid doctests because the quick test
   recipes collect doctests from `*.py` files.
 - Keep the package importable after changes. Export names from
-  `src/package_name/__init__.py` only when they are intentionally part of the
+  `src/solution_intelligence/__init__.py` only when they are intentionally part of the
   top-level public API.
 
 ## Tests
@@ -124,7 +135,7 @@ not installed, run the corresponding `uv run ...` command from the `justfile`.
 - Add new pages to `mkdocs.yml` when they should appear in navigation.
 - Build docs with `just docs-build`; the build is strict and warnings fail CI.
 - Keep API reference paths aligned with importable modules under
-  `src/package_name/`.
+  `src/solution_intelligence/`.
 - Notebook outputs are stripped by pre-commit. After changing a notebook, run
   `just test-notebooks` and do not commit execution output or local kernel
   metadata.
@@ -150,6 +161,17 @@ non-mutating handoff suite:
 ```bash
 just check
 ```
+
+For a typical frontend change, run:
+
+```bash
+just web-typecheck
+just web-lint
+just web-build
+```
+
+For changes that touch both backend and frontend, run `just check-all` (which
+chains the two suites plus the unit tests).
 
 Also run `just docs-build` for documentation or public API changes,
 `just test-notebooks` for notebook changes, and `just package-smoke-test` for

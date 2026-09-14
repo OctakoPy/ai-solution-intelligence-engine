@@ -1,9 +1,9 @@
-"""Fixtures for tests."""
+"""Shared test fixtures."""
 
 import pytest
 
 
 @pytest.fixture
-def example_fixture():
-    """An example fixture."""
-    return "example"
+def anyio_backend() -> str:
+    """Run async tests on the asyncio backend only (trio is not installed)."""
+    return "asyncio"
