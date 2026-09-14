@@ -1,10 +1,10 @@
 cff-version: 1.2.0
-message: If you use python-project-template in your research, please cite it as below.
-title: 'Python Project Template: For initialising a Python package.'
+message: If you use Solution Intelligence Engine in your research, please cite it as below.
+title: 'Solution Intelligence Engine: AI-powered solution analysis.'
 version: 0.10.0
 date-released: '2026-07-18'
 authors:
-  - family-names: Danks
-    given-names: Gemma
-repository-code: https://github.com/gemmadanks/python-project-template
-license: BSD-3-Clause
+  - family-names: Octako
+    given-names: ''
+repository-code: https://github.com/OctakoPy/ai-solution-intelligence-engine
+license: MIT

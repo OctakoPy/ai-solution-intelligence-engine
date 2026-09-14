@@ -1,7 +1,7 @@
-site_name: Python Project Template Documentation
-site_url: https://gemmadanks.github.io/python-project-template/
-repo_url: https://github.com/gemmadanks/python-project-template
-repo_name: python-project-template
+site_name: Solution Intelligence Engine
+site_url: https://OctakoPy.github.io/ai-solution-intelligence-engine/
+repo_url: https://github.com/OctakoPy/ai-solution-intelligence-engine
+repo_name: ai-solution-intelligence-engine
 
 theme:
   name: "material"
@@ -47,12 +47,13 @@ plugins:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/gemmadanks
+      link: https://github.com/OctakoPy
 
 nav:
   - Home: index.md
   - Tutorials:
       - Overview: tutorials/index.md
+      - Demo Script: tutorials/demo-script.md
   - How-To:
       - Overview: how-to/index.md
   - Reference: reference/index.md
@@ -61,6 +62,8 @@ nav:
   - Architecture:
       - Overview: architecture/index.md
       - ADRs: architecture/adr/index.md
+      - ADR-001 (ADRs): architecture/adr/001-use-architectural-decision-records.md
+      - ADR-002 (uv): architecture/adr/002-manage-dependencies-with-uv.md
   - Tags: tags.md
 
 extra_javascript:
