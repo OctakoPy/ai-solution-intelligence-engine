@@ -47,6 +47,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # The full suite (embeddings + pipeline, marked "slow") runs once on
+        # the Ubuntu/py3.12 cell; every other cell runs the fast subset so the
+        # whole matrix finishes in minutes instead of twenty.
         os: [ubuntu-latest, macos-14, windows-latest]
         python: ["3.11", "3.12", "3.13", "3.14"]
     defaults:
@@ -67,10 +70,27 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups
 
-      - name: Run tests (full suite)
+      - name: Cache Hugging Face model
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-qwen3-embedding-${{ hashFiles('uv.lock') }}
+
+      - name: Run tests (full suite + coverage)
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        env:
+          SI_EMBEDDING_DEVICE: cpu
         run: uv run pytest --cov --cov-branch --cov-report=xml
 
+      - name: Run tests (fast subset)
+        if: matrix.os != 'ubuntu-latest' || matrix.python != '3.12'
+        env:
+          SI_EMBEDDING_DEVICE: cpu
+        run: uv run pytest -m "not slow"
+
       - name: Upload coverage reports to Codecov
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
         uses: codecov/codecov-action@v7
 
   docs:
