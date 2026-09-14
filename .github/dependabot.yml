@@ -10,6 +10,13 @@ updates:
       prefix: "build(deps)"
     labels:
       - "dependencies"
+    ignore:
+      # Deliberate caps: ruff 0.16 changes formatting/lint behavior and
+      # plotly 7 is a major that the demo notebook has not been validated on.
+      - dependency-name: "ruff"
+        versions: [">=0.16.0"]
+      - dependency-name: "plotly"
+        versions: [">=7.0.0"]
 
   # Keep GitHub Actions up to date
   - package-ecosystem: "github-actions"
