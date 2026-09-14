@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import threading
 from functools import lru_cache
 from pathlib import Path
@@ -32,7 +33,8 @@ _CACHE_PATH = Path(__file__).resolve().parents[2] / "data" / "embedding_cache.js
 def _get_model():
     from sentence_transformers import SentenceTransformer
 
-    return SentenceTransformer(_MODEL_NAME)
+    device = os.getenv("SI_EMBEDDING_DEVICE", "cpu")
+    return SentenceTransformer(_MODEL_NAME, device=device)
 
 
 class LocalEmbedder:
