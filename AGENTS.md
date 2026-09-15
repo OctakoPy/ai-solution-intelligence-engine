@@ -112,9 +112,10 @@ not installed, run the corresponding `uv run ...` command from the `justfile`.
   change. Keep tests deterministic and independent of execution order.
 - Run the narrowest relevant test during development, then run `just test` for
   code changes. Use `just coverage` when the change has broader impact.
-- CI runs the full test suite on Linux, macOS, and Windows with Python
-  3.11-3.14. Avoid platform-specific paths, shell assumptions, and timing-based
-  assertions in Python code and tests.
+- GitHub Actions is disabled for this repo (free-tier quota), so quality gates
+  run locally via `just check`, `just coverage`, and `just ci`. Keep tests
+  platform-agnostic; the embedding-dependent tests are marked `slow` and run
+  with `just coverage` rather than `just test`.
 
 ## Dependencies and lockfiles
 
@@ -146,10 +147,9 @@ not installed, run the corresponding `uv run ...` command from the `justfile`.
 
 - Use Conventional Commit subjects such as `feat:`, `fix:`, `docs:`, `test:`,
   `refactor:`, `build:`, and `ci:` when asked to create commits.
-- Release Please manages version bumps, release notes, and release metadata.
-  Do not manually edit `CHANGELOG.md`, `.release-please-manifest.json`, or
-  release version fields in `pyproject.toml`, `CITATION.cff`, and `uv.lock`
-  unless the task is specifically about a release.
+- Releases are manual (GitHub Actions is disabled): update `CHANGELOG.md` and
+  the version fields in `pyproject.toml`, `CITATION.cff`, and `uv.lock`
+  together when making a release.
 - Never commit secrets, local virtual environments, caches, coverage output, or
   generated documentation.
 
