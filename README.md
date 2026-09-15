@@ -12,6 +12,8 @@ retrieves proven fixes for new issues — with a transparent, trust-first
 model. Ships with a full Python backend, a React dashboard, and a runnable
 demo dataset.
 
+[![Solution Intelligence Engine Demo](https://img.youtube.com/vi/EL6kNAdEPOY/maxresdefault.jpg)](https://youtu.be/EL6kNAdEPOY)
+
 ![Solution Intelligence Engine dashboard](docs/assets/overview.png)
 
 ## Highlights
