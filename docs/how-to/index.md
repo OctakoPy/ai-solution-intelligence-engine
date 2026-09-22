@@ -44,6 +44,31 @@ changing the selector, or pass a size directly:
 curl -X POST http://localhost:8004/api/ingest -H "Content-Type: application/json" -d '{"max_entries": 78}'
 ```
 
+## Run the pilot evaluation
+
+The eval framework measures whether outcome-aware ranking actually helps,
+using a labeled query -> expected-solution set built from the demo dataset:
+
+```bash
+just eval
+# or, with a dataset cap:
+uv run python scripts/run_eval.py --max-entries 78
+```
+
+It compares three ranking modes on the same cases:
+
+| Mode | What it measures |
+| --- | --- |
+| `similarity` | Raw similarity ranking (the pre-outcome-aware baseline) |
+| `no_context` | Outcome-aware confidence, structured incident context dropped |
+| `context` | The shipped behavior: confidence ranking + incident context |
+
+Metrics per mode: top-1 and top-3 success rate, mean reciprocal rank,
+confidence on hits vs misses (calibration), abstain precision on the
+honest-gap cases, and whether the M8149 UAT context trap is resisted. A
+machine-readable summary is written to `data/eval_report.json` (gitignored;
+reproduce it any time with `just eval`).
+
 ## Add tests
 
 Backend tests live in `tests/unit/` and run with pytest through uv:

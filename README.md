@@ -162,6 +162,7 @@ just web-test        # frontend Vitest unit tests
 just check-all       # backend lint/typecheck/tests + frontend typecheck/lint/build/test
 just web-e2e         # Playwright end-to-end tests (starts api + web)
 just coverage        # backend coverage report
+just eval            # pilot evaluation: three ranking modes over labeled cases
 ```
 
 ## Documentation

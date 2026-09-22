@@ -219,3 +219,6 @@ __marimo__/
 
 # Generated embedding cache (reproducible from static dataset)
 data/embedding_cache.json
+
+# Generated eval report (reproducible via `just eval`)
+data/eval_report.json
