@@ -120,3 +120,11 @@ export interface IngestResponse {
   rejected: number;
   total: number;
 }
+
+export interface OutcomeResponse {
+  recorded: boolean;
+  entry_id: string;
+  success: boolean;
+  worked_count: number[];
+  total_outcomes: number;
+}

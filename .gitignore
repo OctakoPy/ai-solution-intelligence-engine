@@ -222,3 +222,6 @@ data/embedding_cache.json
 
 # Generated eval report (reproducible via `just eval`)
 data/eval_report.json
+
+# Runtime learning log (Resolution Memory outcomes)
+data/resolution_memory.json

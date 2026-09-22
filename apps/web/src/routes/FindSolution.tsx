@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { search } from "@/lib/api";
 import type { RetrievedSolution, SearchContext } from "@/lib/types";
 import { LanguageBadge } from "@/components/ui/language-badge";
+import { OutcomeFeedback } from "@/components/ui/outcome-feedback";
 import { SignalBadge } from "@/components/ui/signal-badge";
 import { SolutionDetails } from "@/components/ui/solution-details";
 
@@ -226,6 +227,9 @@ export default function FindSolution() {
                   ))}
                 </div>
               )}
+              <div className="mt-2 flex items-center justify-between">
+                <OutcomeFeedback entryId={r.id} />
+              </div>
             </div>
           );
         })}

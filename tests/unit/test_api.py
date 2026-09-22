@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from apps.api.engine_cache import reset_cache
+from apps.api.engine_cache import get_or_build_engine, reset_cache
 from apps.api.main import app
 
 
@@ -230,6 +230,72 @@ async def test_chat_low_confidence_escalates(client: AsyncClient) -> None:
     assert any(
         "confident match" in t["text"] or "escalate" in t["text"] for t in body["turns"]
     )
+
+
+@pytest.mark.anyio
+async def test_outcome_endpoint_records_and_updates_count(client: AsyncClient) -> None:
+    """POST /api/outcomes persists the outcome and bumps worked_count."""
+    await client.post("/api/ingest", json={"max_entries": 3})
+    engine = get_or_build_engine(0)
+    entry = engine.index.entries[0]
+    before = (entry.worked, entry.attempted)
+    resp = await client.post(
+        "/api/outcomes",
+        json={"entry_id": entry.id, "success": True, "note": "fixed it"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["recorded"] is True
+    assert body["entry_id"] == entry.id
+    assert body["worked_count"] == [before[0] + 1, before[1] + 1]
+    assert body["total_outcomes"] == 1
+
+
+@pytest.mark.anyio
+async def test_outcome_endpoint_unknown_id_returns_404(client: AsyncClient) -> None:
+    resp = await client.post(
+        "/api/outcomes", json={"entry_id": "NOPE", "success": True}
+    )
+    assert resp.status_code == 404
+
+
+@pytest.mark.anyio
+async def test_outcome_status_reports_learned_state(client: AsyncClient) -> None:
+    await client.post("/api/ingest", json={"max_entries": 3})
+    engine = get_or_build_engine(0)
+    entry_id = engine.index.entries[0].id
+    await client.post("/api/outcomes", json={"entry_id": entry_id, "success": False})
+    resp = await client.get(f"/api/outcomes/status?entry_id={entry_id}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["recorded"] is False
+    assert body["total_outcomes"] == 1
+    assert body["success"] is False
+
+
+@pytest.mark.anyio
+async def test_outcome_learns_across_engines(client: AsyncClient) -> None:
+    """The recording engine updates immediately; new engines learn at ingest."""
+    await client.post("/api/ingest", json={"max_entries": 3})
+    full = get_or_build_engine(0)
+    entry_id = full.index.entries[0].id
+    recorded = full.index.get(entry_id)
+    assert recorded is not None
+    base_attempted = recorded.attempted
+    resp = await client.post(
+        "/api/outcomes",
+        json={"entry_id": entry_id, "success": True},
+    )
+    assert resp.status_code == 200
+    # The engine that recorded the outcome reflects it immediately.
+    updated = full.index.get(entry_id)
+    assert updated is not None
+    assert updated.attempted == base_attempted + 1
+    # A newly built engine variant applies the same shared memory on ingest.
+    fresh = get_or_build_engine(8)
+    learned = fresh.index.get(entry_id)
+    assert learned is not None
+    assert learned.attempted == base_attempted + 1
 
 
 @pytest.mark.anyio
