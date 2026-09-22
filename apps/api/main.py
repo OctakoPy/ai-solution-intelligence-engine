@@ -8,7 +8,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from apps.api.routes import analytics, chat, config, overview, pipeline, search
+from apps.api.routes import (
+    analytics,
+    chat,
+    config,
+    outcomes,
+    overview,
+    pipeline,
+    search,
+)
 
 app = FastAPI(
     title="Solution Intelligence Engine API",
@@ -34,6 +42,7 @@ app.include_router(config.router)
 app.include_router(pipeline.router)
 app.include_router(analytics.router)
 app.include_router(search.router)
+app.include_router(outcomes.router)
 app.include_router(chat.router)
 app.include_router(overview.router)
 

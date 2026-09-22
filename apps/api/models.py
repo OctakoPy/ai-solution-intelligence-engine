@@ -135,6 +135,25 @@ class SearchResponse(BaseModel):
     results: list[RetrievedSolution]
 
 
+class OutcomeRequest(BaseModel):
+    """Request body for POST /api/outcomes."""
+
+    entry_id: str
+    success: bool
+    note: str = ""
+    context: IncidentContext | None = None
+
+
+class OutcomeResponse(BaseModel):
+    """Result of a recorded outcome."""
+
+    recorded: bool
+    entry_id: str
+    success: bool
+    worked_count: list[int]
+    total_outcomes: int
+
+
 class ChatTurn(BaseModel):
     """One message in a chat session."""
 

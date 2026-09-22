@@ -94,6 +94,22 @@ The eval is deterministic for a fixed dataset and embedder, so any change to
 weights, signals, or ranking logic shows up as a before/after diff in the
 report rather than as a vibes-level impression.
 
+## The learning loop: Resolution Memory
+
+A confidence score is only honest if it changes when reality disagrees with
+it. Resolution Memory closes that loop: every recommendation can be
+confirmed as worked or not worked, the outcome is appended to a persistent
+log, and the affected record's `worked_count` is adjusted on the next
+ingest or search. Because `worked_count` feeds the success-rate signal in
+the confidence score (weight 0.20), a confirmed failure demotes a candidate
+and a confirmed success boosts it — positive and negative learning from one
+mechanism, with no retraining.
+
+The log is the single source of learned state. Deltas are always recomputed
+from the log against each record's pristine base counts, so the loop is
+idempotent (re-ingesting the static dataset never double-counts) and
+resetting is just deleting `data/resolution_memory.json`.
+
 ## Multilingual retrieval without translation
 
 Tickets arrive in English, Bahasa Malaysia, and Chinese. Instead of translating

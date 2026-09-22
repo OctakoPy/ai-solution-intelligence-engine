@@ -1,5 +1,6 @@
 import type {
   IngestResponse,
+  OutcomeResponse,
   OverviewResponse,
   RetrievedSolution,
   View,
@@ -76,3 +77,9 @@ export const chatRespond = (session_id: string, message: string) =>
 
 export const fetchOverview = (max_entries: number) =>
   api<OverviewResponse>(`/api/analytics/overview?max_entries=${max_entries}`);
+
+export const recordOutcome = (entry_id: string, success: boolean, note = "") =>
+  api<OutcomeResponse>("/api/outcomes", {
+    method: "POST",
+    body: JSON.stringify({ entry_id, success, note }),
+  });
