@@ -67,6 +67,33 @@ similarity alone. Search results are ranked by this outcome-aware confidence
 score (not by raw similarity), and the readout is always shown, so a
 low-confidence match looks low-confidence instead of looking like an answer.
 
+## Measuring whether it works: the pilot eval
+
+Confidence claims are only meaningful if they are measured. The evaluation
+framework (`evaluate.py`, run with `just eval`) scores the ranking against a
+labeled set of queries derived from the demo dataset, comparing three modes:
+raw similarity (the old behavior), outcome-aware confidence without incident
+context, and the full outcome-aware ranking with context.
+
+Three results matter:
+
+- **Retrieval quality** — top-1 / top-3 success and mean reciprocal rank.
+  On the labeled set, context-ful ranking lifts top-1 from 75% to 100% while
+  similarity-only and context-less modes tie at 75%: the three context cases
+  are exactly where similarity alone picks the wrong record.
+- **Calibration** — confidence on hits should sit far above confidence on
+  misses and on the honest-gap cases. If a high score ever landed on a gap,
+  the abstain policy (0.75 bar) would be lying; the eval's abstain-precision
+  metric catches that.
+- **The context trap** — the M8149 UAT case is graded explicitly: with UAT
+  context the UAT record must rank first, not the PROD look-alike. Similarity
+  fails this check (it ranks by text closeness, and the two records are
+  nearly identical in text); outcome-aware ranking passes it.
+
+The eval is deterministic for a fixed dataset and embedder, so any change to
+weights, signals, or ranking logic shows up as a before/after diff in the
+report rather than as a vibes-level impression.
+
 ## Multilingual retrieval without translation
 
 Tickets arrive in English, Bahasa Malaysia, and Chinese. Instead of translating
