@@ -33,6 +33,11 @@ export const fetchViews = (max_entries: number) =>
 export interface SearchArgs {
   query: string;
   top_k?: number;
+  context?: {
+    error_code?: string | null;
+    module?: string | null;
+    environment?: string | null;
+  };
 }
 
 export const search = (args: SearchArgs) =>
@@ -41,6 +46,13 @@ export const search = (args: SearchArgs) =>
     body: JSON.stringify({
       query: args.query,
       top_k: args.top_k ?? 5,
+      ...(args.context
+        ? {
+            context: Object.fromEntries(
+              Object.entries(args.context).filter(([_, v]) => v?.trim()),
+            ),
+          }
+        : {}),
     }),
   });
 

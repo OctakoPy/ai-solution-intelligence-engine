@@ -38,7 +38,7 @@ async def test_dataset_sizes(client: AsyncClient) -> None:
     data = resp.json()
     assert len(data["options"]) == 3
     labels = [o["label"] for o in data["options"]]
-    assert "Debug (3)" in labels and "Full (76)" in labels
+    assert "Debug (3)" in labels and "Full (78)" in labels
 
 
 @pytest.mark.anyio
@@ -145,6 +145,46 @@ async def test_search_surfaces_multilingual(client: AsyncClient) -> None:
     bm = next(r for r in results if r["language"] == "bm")
     assert bm["english_title"] and bm["english_resolution"]
     assert bm["english_description"]
+
+
+@pytest.mark.anyio
+async def test_search_accepts_context(client: AsyncClient) -> None:
+    await client.post("/api/ingest", json={"max_entries": 12})
+    resp = await client.post(
+        "/api/search",
+        json={
+            "query": "SAP authorization error on FI reports",
+            "top_k": 5,
+            "context": {
+                "error_code": "S_RS_COMP",
+                "module": "SAP FICO",
+                "environment": "PROD",
+            },
+        },
+    )
+    assert resp.status_code == 200
+    results = resp.json()["results"]
+    assert isinstance(results, list)
+    assert all(0.0 <= r["confidence"] <= 1.0 for r in results)
+    with_context = [r for r in results if r["signals"]]
+    assert with_context, "matching context should surface signal badges"
+
+
+@pytest.mark.anyio
+async def test_chat_start_accepts_context(client: AsyncClient) -> None:
+    await client.post("/api/ingest", json={"max_entries": 12})
+    resp = await client.post(
+        "/api/chat/start",
+        json={
+            "query": "SAP authorization error on FI reports",
+            "session_id": "ctx1",
+            "context": {"error_code": "S_RS_COMP", "module": "SAP FICO"},
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "turns" in body and "candidates" in body
+    assert all(0.0 <= c["confidence"] <= 1.0 for c in body["candidates"])
 
 
 @pytest.mark.anyio

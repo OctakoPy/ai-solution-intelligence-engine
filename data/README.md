@@ -1,13 +1,13 @@
 # Knowledge Dataset
 
-Synthetic knowledge index dataset for the Solution Intelligence Engine. Contains 70 entries across 4 source types: `ticket`, `sap_note`, `sharepoint_doc`, `kb_article`. Each entry includes metadata for duplicate detection, quality filtering, and retrieval scoring.
+Synthetic knowledge index dataset for the Solution Intelligence Engine. Contains 78 entries across 4 source types: `ticket`, `sap_note`, `sharepoint_doc`, `kb_article`. Each entry includes metadata for duplicate detection, quality filtering, and retrieval scoring.
 
 ## Source Types
 
 - `ticket` — Support tickets (TIC-XXX)
-- `sap_note` — SAP notes (KERNEL-XXX)
-- `sharepoint_doc` — SharePoint documents (SP-XXX)
-- `kb_article` — Knowledge base articles (KB-XXX)
+- `sap_note` — SAP notes (SAP-XXX)
+- `sharepoint_doc` — SharePoint documents (SHA-XXX)
+- `kb_article` — Knowledge base articles (KB_-XXX)
 
 ## Key Fields
 
@@ -27,6 +27,10 @@ Synthetic knowledge index dataset for the Solution Intelligence Engine. Contains
 | `quality_flag` | string | `good`, `junk`, or `restricted` (filtering) |
 | `deprecated_reference` | boolean | True if tied to retired systems |
 | `worked_count` | array | `[times_worked, times_attempted]` for confidence scoring |
+| `error_code` | string \| null | Exact error code the resolution addresses (e.g. `S_RS_COMP`) |
+| `module` | string \| null | Affected system / module (e.g. `SAP FICO`, `VPN`) |
+| `environment` | string \| null | Environment the fix was proven in (e.g. `PROD`, `UAT`) |
+| `feedback_score` | number | 0..1 consultant feedback earned from the UI (0 by default) |
 
 ## Duplicate Detection
 

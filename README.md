@@ -24,7 +24,9 @@ demo dataset.
   before it is accepted, flagged for human review, or rejected.
 - **Semantic retrieval with confidence** — matches a new issue against
   proven solutions using multilingual embeddings, then blends similarity with
-  historical success rate into a 0–100% confidence score.
+  historical success rate, exact error-code/module/environment matches,
+  recency, and consultant feedback into a deterministic 0–100% confidence
+  score — weighted, auditable, and explainable.
 - **Trust-first "why" panel** — each answer shows its source system,
   similarity scores, confidence, and prior success, so no decision is a
   black box.
@@ -73,7 +75,7 @@ demo dataset.
                         ▼
                ┌──────────────────────────────────────────┐
                │  KnowledgeIndex  ·  embeddings + cosine  │
-               │  ConfidenceScorer · similarity + history │
+               │  ConfidenceScorer · 7 weighted signals    │
                │  ConversationalAgent · chat refinement   │
                └──────────────────────────────────────────┘
                         │
@@ -129,18 +131,25 @@ for hit in engine.search("SAP FI report access denied authorization error", top_
 
 ## Demo dataset
 
-A bundled synthetic dataset (`data/knowledge.json`, 76 records) simulates the
+A bundled synthetic dataset (`data/knowledge.json`, 78 records) simulates the
 four enterprise source systems:
 
 | Source | IDs | Records |
 | --- | --- | --- |
-| Ticket | `TIC-*` | 57 |
+| Ticket | `TIC-*` | 59 |
 | SAP note | `SAP-*` | 8 |
 | SharePoint doc | `SHA-*` | 6 |
 | Knowledge-base article | `KB_-*` | 5 |
 
-70 records are English; 3 are Bahasa Malaysia and 3 are Chinese (with
+72 records are English; 3 are Bahasa Malaysia and 3 are Chinese (with
 stored English translations) to exercise cross-lingual retrieval.
+
+**Try the context panel:** on **Find a Solution**, expand **Incident details
+(optional)** and enter an error code, system, and environment. The engine
+matches them against the knowledge base and shows exactly which cues matched
+(e.g. `M8149` + `SAP MM` + `PROD` → `TIC-3011`, while the same error code in
+`UAT` → a different root cause, `TIC-3012`). See the
+[demo script](docs/tutorials/demo-script.md) for the full walkthrough.
 
 The full demo script with sample queries for each page lives in
 [`docs/tutorials/demo-script.md`](docs/tutorials/demo-script.md).
@@ -186,7 +195,7 @@ just docs-serve      # local docs on :8001
 ├── apps/
 │   ├── api/                     # FastAPI app (routes, schemas, engine cache)
 │   └── web/                     # React + Vite dashboard
-├── data/knowledge.json          # Synthetic demo dataset (76 records)
+├── data/knowledge.json          # Synthetic demo dataset (78 records)
 ├── tests/                       # Backend tests (pytest)
 ├── apps/web/tests/              # Frontend tests (Vitest + Playwright)
 ├── notebooks/example.ipynb      # Notebook walkthrough
@@ -198,7 +207,7 @@ just docs-serve      # local docs on :8001
 ## Configuration
 
 The backend and dataset size are configurable from the dashboard sidebar
-(Debug 3 / Small 8 / Full 76 records). Frontend and backend options are kept
+(Debug 3 / Small 8 / Full 78 records). Frontend and backend options are kept
 in sync through the API's config endpoints.
 
 ## Contributing
