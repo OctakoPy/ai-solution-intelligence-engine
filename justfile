@@ -71,6 +71,10 @@ test-notebooks:
 coverage:
     uv run pytest --cov --cov-report=term-missing
 
+# Run the pilot evaluation (three ranking modes over the labeled demo cases)
+eval:
+    uv run python scripts/run_eval.py
+
 # Build docs (MkDocs strict)
 docs-build:
     uv run --group docs mkdocs build --strict
