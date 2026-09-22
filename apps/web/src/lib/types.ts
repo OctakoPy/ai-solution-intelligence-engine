@@ -38,6 +38,14 @@ export interface View {
   language?: Language;
 }
 
+export type Signal = "error_code" | "module" | "environment";
+
+export interface SearchContext {
+  error_code?: string;
+  module?: string;
+  environment?: string;
+}
+
 export interface RetrievedSolution {
   id: string;
   title: string;
@@ -52,6 +60,7 @@ export interface RetrievedSolution {
   english_title?: string;
   english_description?: string;
   english_resolution?: string;
+  signals?: Signal[];
 }
 
 export interface ChatTurn {

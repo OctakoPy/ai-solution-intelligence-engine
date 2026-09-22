@@ -9,7 +9,13 @@ from solution_intelligence.ingestion import (
     Stage1Filter,
 )
 from solution_intelligence.models import KnowledgeEntry, StageResult
-from solution_intelligence.retrieval import ConfidenceScorer, KnowledgeIndex
+from solution_intelligence.retrieval import (
+    ConfidenceScorer,
+    IncidentContext,
+    KnowledgeIndex,
+    SIGNAL_WEIGHTS,
+    matched_signals,
+)
 from solution_intelligence.sources import TicketConnector, load_entries, load_filtered
 import solution_intelligence.analytics as engine_analytics
 
@@ -192,6 +198,92 @@ def test_confidence_scorer():
     strong = make_entry(worked=(9, 9))
     weak = make_entry(worked=(1, 5))
     assert scorer.score(strong, 0.9) > scorer.score(weak, 0.7)
+
+
+def test_signal_weights_sum_to_one():
+    assert sum(SIGNAL_WEIGHTS.values()) == 1.0
+
+
+def test_structured_fields_roundtrip():
+    raw = {
+        "id": "TIC-9",
+        "source_type": "ticket",
+        "title": "t",
+        "description": "d",
+        "resolution": "r",
+        "error_code": "M8149",
+        "module": "SAP MM",
+        "environment": "PROD",
+        "feedback_score": "0.75",
+    }
+    entry = KnowledgeEntry.from_dict(raw)
+    assert entry.error_code == "M8149"
+    assert entry.module == "SAP MM"
+    assert entry.environment == "PROD"
+    assert entry.feedback_score == 0.75
+    d = entry.to_dict()
+    assert d["error_code"] == "M8149"
+    assert d["module"] == "SAP MM"
+    assert d["environment"] == "PROD"
+    assert d["feedback_score"] == 0.75
+
+
+def test_context_error_code_match_boosts():
+    scorer = ConfidenceScorer()
+    entry = make_entry()
+    entry.error_code = "S_RFC"
+    base = scorer.score(entry, 0.8)
+    matched = scorer.score(entry, 0.8, IncidentContext(error_code="S_RFC"))
+    assert matched > base
+
+
+def test_context_module_match_prefers_exact_module():
+    scorer = ConfidenceScorer()
+    co = make_entry(entry_id="CO")
+    fico = make_entry(entry_id="FICO")
+    co.module = "SAP CO"
+    fico.module = "SAP FICO"
+    context = IncidentContext(error_code="S_RS_COMP", module="SAP CO")
+    assert scorer.score(co, 0.7, context) > scorer.score(fico, 0.7, context)
+
+
+def test_matched_signals_reports_what_matched():
+    entry = make_entry()
+    entry.error_code = "M8149"
+    entry.module = "SAP MM"
+    entry.environment = "UAT"
+    context = IncidentContext(error_code="M8149", module="SAP MM", environment="PROD")
+    assert matched_signals(entry, context) == ["error_code", "module"]
+    assert matched_signals(entry, IncidentContext(environment="UAT")) == ["environment"]
+    assert matched_signals(entry, None) == []
+
+
+def test_context_environment_mismatch_demotes():
+    """Same error code in a different environment is a different root cause."""
+    scorer = ConfidenceScorer()
+    prod = make_entry(entry_id="PROD")
+    uat = make_entry(entry_id="UAT")
+    prod.environment = "PROD"
+    uat.environment = "UAT"
+    context = IncidentContext(error_code="S_RS_COMP", environment="UAT")
+    assert scorer.score(uat, 0.7, context) > scorer.score(prod, 0.7, context)
+
+
+def test_recency_decay_older_solutions():
+    scorer = ConfidenceScorer()
+    old = make_entry(entry_id="OLD", worked=(9, 9))
+    fresh = make_entry(entry_id="NEW", worked=(9, 9))
+    old.date = "2015-01-01"
+    fresh.date = "2025-01-01"
+    assert scorer.score(fresh, 0.7) > scorer.score(old, 0.7)
+
+
+def test_feedback_signal_raises_confidence():
+    scorer = ConfidenceScorer()
+    liked = make_entry(entry_id="LIKED", worked=(9, 9))
+    plain = make_entry(entry_id="PLAIN", worked=(9, 9))
+    liked.feedback_score = 1.0
+    assert scorer.score(liked, 0.7) > scorer.score(plain, 0.7)
 
 
 def test_resolution_time_by_category():

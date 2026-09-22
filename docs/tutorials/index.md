@@ -1,7 +1,7 @@
 # Tutorials
 
 Start here to see what the Solution Intelligence Engine can do with the demo
-dataset (76 records across tickets, SAP notes, SharePoint documents, and
+dataset (78 records across tickets, SAP notes, SharePoint documents, and
 knowledge-base articles).
 
 ## Quick start

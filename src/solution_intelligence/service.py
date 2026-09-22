@@ -15,7 +15,12 @@ from solution_intelligence.models import (
     PipelineRun,
     RetrievedSolution,
 )
-from solution_intelligence.retrieval import ConfidenceScorer, KnowledgeIndex
+from solution_intelligence.retrieval import (
+    ConfidenceScorer,
+    IncidentContext,
+    KnowledgeIndex,
+    rank_results,
+)
 
 
 class SolutionEngine:
@@ -52,9 +57,24 @@ class SolutionEngine:
         self,
         query: str,
         top_k: int = 5,
+        context: IncidentContext | None = None,
     ) -> list[RetrievedSolution]:
-        """Retrieve solutions for a new issue with confidence scores."""
-        results = self.index.query(query, top_k=top_k)
-        for result in results:
-            result.confidence = self.confidence.score(result.entry, result.score)
-        return results
+        """Retrieve solutions for a new issue with confidence scores.
+
+        Args:
+            query: Free-text description of the issue.
+            top_k: Maximum number of candidates to return.
+            context: Optional structured incident context (error code,
+                module, environment) used by the confidence scorer's match
+                signals.
+
+        Results are ranked by outcome-aware confidence - the deterministic
+        weighted signal score - not by raw similarity alone.
+        """
+        return rank_results(
+            index=self.index,
+            query=query,
+            top_k=top_k,
+            context=context,
+            adjust=None,
+        )

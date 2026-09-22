@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 DATASET_OPTIONS: list[tuple[str, int]] = [
     ("Debug (3)", 3),
     ("Small (8)", 8),
-    ("Full (76)", 76),
+    ("Full (78)", 78),
 ]
 
 GPU_LEVELS: list[str] = [

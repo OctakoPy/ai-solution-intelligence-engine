@@ -42,10 +42,30 @@ Every record passes a three-stage gauntlet:
 
 ## Confidence: not just similarity
 
-`combined_score` blends **semantic similarity** with a **workout uplifttariff**:
-records proven to have resolved issues (e.g. worked 8/8 times) rank above
-similar but unproven ones. The readout is always shown, so a low-confidence
-match looks low-confidence instead of looking like an answer.
+Every match carries an outcome-aware confidence score: a deterministic,
+auditable weighted sum of seven signals.
+
+| Signal | Weight | Source |
+| --- | --- | --- |
+| Semantic similarity | 0.25 | how close the incident text is to the record |
+| Error-code match | 0.15 | exact match of the incident error code |
+| System / module match | 0.15 | incident module vs the record's module |
+| Environment match | 0.10 | environment equality (PROD, UAT, ...) |
+| Historical success rate | 0.20 | worked / attempted |
+| Recency decay | 0.10 | how fresh the record is (half-life model) |
+| Consultant feedback | 0.05 | thumbs up / down from the UI |
+
+The weights are module-level constants in `retrieval.py` that sum to 1.0, so
+the score is explainable without calling a model. The three match signals only
+fire when an incident supplies structured context (error code, module,
+environment); without context they contribute nothing instead of guessing.
+
+Because a failed fix lowers the success-rate signal and a mismatched
+environment zeroes the environment signal, a record that merely *looks*
+similar — but failed before or belongs to a different context — cannot win on
+similarity alone. Search results are ranked by this outcome-aware confidence
+score (not by raw similarity), and the readout is always shown, so a
+low-confidence match looks low-confidence instead of looking like an answer.
 
 ## Multilingual retrieval without translation
 
