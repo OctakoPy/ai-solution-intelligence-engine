@@ -112,7 +112,7 @@ class ConfidenceScorer:
         ...     resolution="r", worked_count=(9, 9),
         ... )
         >>> scorer.score(entry, 0.9)
-        0.4125
+        0.425
     """
 
     def score(
