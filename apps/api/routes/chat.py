@@ -12,11 +12,24 @@ from apps.api.models import (
     ChatResponse,
     ChatStartRequest,
     ChatTurn,
+    IncidentContext,
     RetrievedSolution,
 )
 from apps.api.views import SOURCE_LABELS
+from solution_intelligence.retrieval import IncidentContext as CoreContext
 
 router = APIRouter(tags=["chat"])
+
+
+def _to_context(req: IncidentContext | None) -> CoreContext | None:
+    """Convert a request context into the engine's core context model."""
+    if req is None:
+        return None
+    return CoreContext(
+        error_code=req.error_code,
+        module=req.module,
+        environment=req.environment,
+    )
 
 
 def _now() -> str:
@@ -114,7 +127,9 @@ def _build_assistant_turn(query: str, candidates: list[RetrievedSolution]) -> st
 async def chat_start(req: ChatStartRequest) -> ChatResponse:
     """Start a new chat session with the engine agent."""
     engine = get_or_build_engine(0)
-    session = engine.agent.start(req.session_id, req.query)
+    session = engine.agent.start(
+        req.session_id, req.query, context=_to_context(req.context)
+    )
     candidates = (
         _hits_to_solutions(session.turns[-1].candidates) if session.turns else []
     )

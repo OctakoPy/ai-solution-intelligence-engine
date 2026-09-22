@@ -34,6 +34,10 @@ class KnowledgeEntry:
     quality_flag: str = "good"
     deprecated_reference: bool = False
     worked_count: tuple[int, int] = (0, 0)
+    error_code: str | None = None
+    module: str | None = None
+    environment: str | None = None
+    feedback_score: float = 0.0
     language: str = "en"
     english_title: str = ""
     english_description: str = ""
@@ -87,6 +91,10 @@ class KnowledgeEntry:
             quality_flag=str(raw.get("quality_flag", "good")),
             deprecated_reference=bool(raw.get("deprecated_reference", False)),
             worked_count=(worked, attempted),
+            error_code=raw.get("error_code"),
+            module=raw.get("module"),
+            environment=raw.get("environment"),
+            feedback_score=float(raw.get("feedback_score", 0.0)),
             language=str(raw.get("language", "en")),
             english_title=str(raw.get("english_title", "")),
             english_description=str(raw.get("english_description", "")),
@@ -111,6 +119,10 @@ class KnowledgeEntry:
             "quality_flag": self.quality_flag,
             "deprecated_reference": self.deprecated_reference,
             "worked_count": [self.worked, self.attempted],
+            "error_code": self.error_code,
+            "module": self.module,
+            "environment": self.environment,
+            "feedback_score": self.feedback_score,
             "language": self.language,
             "english_title": self.english_title,
             "english_description": self.english_description,
@@ -201,6 +213,7 @@ class RetrievedSolution:
     score: float  # similarity 0..1
     confidence: float  # overall quality 0..1
     duplicate_of: str | None = None
+    signals: list[str] = field(default_factory=list)
 
     @property
     def combined_score(self) -> float:

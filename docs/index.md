@@ -9,7 +9,7 @@ near-duplicates, and surfaces **proven** solutions — with a transparent
 
 ## Start here
 
-- **Try it** — the [demo script](tutorials/demo-script.md) walks through 76
+- **Try it** — the [demo script](tutorials/demo-script.md) walks through 78
   demo records query by query.
 - **Use it** — set up and run the engine in the [how-to guide](how-to/index.md).
 - **Understand it** — see the reasoning behind confidence scores, duplicate
@@ -22,6 +22,9 @@ Architectural decisions are recorded in the [ADR section](architecture/adr/index
 
 - **Trust-first answers** — every result shows *why*: source, similarity,
   confidence, and historical success rate.
+- **Outcome-aware matching** — add an error code, system, and environment on
+  Find a Solution and the engine surfaces exactly which details matched (and
+  which didn't), so a similar-looking record from the wrong context can't win.
 - **Transparent pipeline** — accepted / flagged / rejected, with the AI's
   reasoning attached to every judgment call.
 - **Honest gap handling** — novel issues earn a low-confidence "escalate to a

@@ -94,11 +94,20 @@ class SourcesResponse(BaseModel):
     kb_article: int
 
 
+class IncidentContext(BaseModel):
+    """Structured incident context sent alongside a query or chat message."""
+
+    error_code: str | None = None
+    module: str | None = None
+    environment: str | None = None
+
+
 class SearchRequest(BaseModel):
     """Request body for /api/search."""
 
     query: str
     top_k: int = 5
+    context: IncidentContext | None = None
 
 
 class RetrievedSolution(BaseModel):
@@ -117,6 +126,7 @@ class RetrievedSolution(BaseModel):
     english_title: str = ""
     english_description: str = ""
     english_resolution: str = ""
+    signals: list[str] = []
 
 
 class SearchResponse(BaseModel):
@@ -138,6 +148,7 @@ class ChatStartRequest(BaseModel):
 
     query: str
     session_id: str = "default"
+    context: IncidentContext | None = None
 
 
 class ChatRespondRequest(BaseModel):
