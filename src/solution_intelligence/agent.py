@@ -11,7 +11,11 @@ import re
 from dataclasses import dataclass, field
 
 from solution_intelligence.models import RetrievedSolution
-from solution_intelligence.retrieval import KnowledgeIndex
+from solution_intelligence.retrieval import (
+    ConfidenceScorer,
+    IncidentContext,
+    KnowledgeIndex,
+)
 
 
 @dataclass
@@ -28,6 +32,7 @@ class ChatSession:
     """State of a single chat conversation."""
 
     query: str = ""
+    context: IncidentContext | None = None
     turns: list[ChatTurn] = field(default_factory=list)
 
     def add_user(self, text: str, candidates: list[RetrievedSolution]) -> None:
@@ -63,14 +68,25 @@ def detect_intent(message: str) -> str:
 class ConversationalAgent:
     """Handles a chat session and refines retrieval on new messages."""
 
-    def __init__(self, index: KnowledgeIndex) -> None:
+    def __init__(
+        self,
+        index: KnowledgeIndex,
+        scorer: ConfidenceScorer | None = None,
+    ) -> None:
         self.index = index
+        self.scorer = scorer or ConfidenceScorer()
         self.sessions: dict[str, ChatSession] = {}
 
-    def start(self, session_id: str, query: str) -> ChatSession:
+    def start(
+        self,
+        session_id: str,
+        query: str,
+        context: IncidentContext | None = None,
+    ) -> ChatSession:
         """Create a session and return the initial candidate list."""
         candidates = self.index.query(query, top_k=5)
-        session = ChatSession(query=query)
+        candidates = _score_candidates(self.scorer, candidates, context)
+        session = ChatSession(query=query, context=context)
         session.add_user(query, candidates)
         self.sessions[session_id] = session
         return session
@@ -80,6 +96,7 @@ class ConversationalAgent:
         session_id: str,
         message: str,
         top_k: int = 5,
+        context: IncidentContext | None = None,
     ) -> ChatSession:
         """Process a follow-up message and update the session.
 
@@ -88,7 +105,7 @@ class ConversationalAgent:
         """
         session = self.sessions.get(session_id)
         if session is None:
-            session = self.start(session_id, message)
+            session = self.start(session_id, message, context)
             return session
 
         intent = detect_intent(message)
@@ -99,11 +116,24 @@ class ConversationalAgent:
         else:
             candidates = self.index.query(session.query, top_k=top_k)
 
+        candidates = _score_candidates(self.scorer, candidates, session.context)
+
         if boost_terms:
             candidates = _apply_boosts(candidates, boost_terms)
 
         session.add_user(message, candidates)
         return session
+
+
+def _score_candidates(
+    scorer: ConfidenceScorer,
+    candidates: list[RetrievedSolution],
+    context: IncidentContext | None,
+) -> list[RetrievedSolution]:
+    """Attach outcome-aware confidence to each candidate."""
+    for candidate in candidates:
+        candidate.confidence = scorer.score(candidate.entry, candidate.score, context)
+    return candidates
 
 
 def _extract_boost_terms(message: str) -> list[str]:

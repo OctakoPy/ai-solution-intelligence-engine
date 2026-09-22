@@ -1,6 +1,6 @@
 # Demo Script
 
-A step-by-step demo of the Solution Intelligence Engine, run on the **Full (76)**
+A step-by-step demo of the Solution Intelligence Engine, run on the **Full (78)**
 dataset. Questions are phrased as a real support agent would type them, and
 include failing cases to show honest gap handling.
 
@@ -139,7 +139,7 @@ dataset, not a live translator).
 
 ## Voiceover walkthrough (5 min)
 
-Run on the **Full (76)** dataset. Non-technical narration, dashboard order:
+Run on the **Full (78)** dataset. Non-technical narration, dashboard order:
 
 **Overview → Pipeline → Find a Solution → Chat**
 
@@ -147,16 +147,16 @@ Timestamps are targets; adjust to the pacing of your screen recording.
 
 ### 0:00 — Overview Page
 
-**[Screen: Overview page, sidebar, dataset set to Full 76]**
+**[Screen: Overview page, sidebar, dataset set to Full 78]**
 
 "This is the Solution Intelligence Engine. It's a single dashboard where
 support teams can see everything the AI has absorbed — all in one place.
 
-Right now we're looking at a full day of work: 76 records processed. That's
-76 real problems pulled in from four different IT systems — our ticketing
+Right now we're looking at a full day of work: 78 records processed. That's
+78 real problems pulled in from four different IT systems — our ticketing
 system, SAP, SharePoint documents, and the internal knowledge base.
 
-Notice these three numbers. Out of 76 records, most got **added** to the
+Notice these three numbers. Out of 78 records, most got **added** to the
 knowledge base so the system can reuse them later. A smaller slice got
 **rejected** — those are duplicates the AI caught automatically, so a
 consultant never has to solve the same thing twice.
@@ -179,7 +179,7 @@ needs? Then an AI quality judge reads the actual text and scores its
 explanatory quality. And last, a similarity check — is this the same problem
 we already solved?
 
-So for 76 records the pipeline **rejects** the near-duplicates the AI was
+So for 78 records the pipeline **rejects** the near-duplicates the AI was
 already confident about, and **flags** the gray-zone cases for a human
 consultant to look at. The engine never silently throws anything away — it
 just routes it to the right human attention."
@@ -193,11 +193,10 @@ not authorized this morning`. I'll find an existing solution.
 
 The engine parses the semantics and finds the most similar problems people
 have solved before — instantly. Top hit: `TIC-1001`, a near-identical auth
-issue that was **worked 8 out of 8 times**. 88% confidence.
+issue that was **worked 8 out of 8 times**, with a high-confidence readout.
 
 And this is the part I love — I can expand it and get the **why**: the exact
-step-by-step resolution, the system it came from, the similarity breakdown,
-the confidence, and who worked it before.
+step-by-step resolution and the system it came from.
 
 Now watch the bottom of the list. The engine is multilingual — that English
 query just surfaced Bahasa Malaysia and Chinese translations of the same auth
@@ -234,3 +233,60 @@ made-up answer."
 "That's the Solution Intelligence Engine — structured ingestion, honest
 confidence, multilingual retrieval, and a human in the loop, so support teams
 solve once and reuse forever."
+
+---
+
+## What you can test — outcome-aware context (Find a Solution)
+
+Set the dataset to **Full (78)**, open **Find a Solution**, and run these
+scenarios. Use the **Incident details (optional)** panel to add an error code,
+system, and environment; matched details appear as green **✓ badges** on the
+result cards (Error code / System / Environment) and are reflected in the
+confidence readout.
+
+### 1. Exact context match — the M8149 canonical fix
+
+- Query: `goods receipt posting error account determination not found`
+- Incident details: `M8149` · `SAP MM` · `PROD`
+
+**Expected:** `TIC-3011` "SAP MM goods receipt posting error - account
+determination not found M8149" ranks first with **✓ Error code ✓ System ✓
+Environment** badges and the highest confidence. Expand it to see the OBYC
+account-determination fix.
+
+### 2. Context trap — same error code, different environment
+
+Same query, same error code and system, but change the environment to `UAT`:
+
+- Incident details: `M8149` · `SAP MM` · `UAT`
+
+**Expected:** `TIC-3012` "M8149 goods receipt posting error in UAT sandbox"
+rises to the top with **✓ Error code ✓ System ✓ Environment**. The `PROD`
+record (`TIC-3011`) now drops the **Environment** badge — the engine is
+signalling that this is the *same error code but a different root cause*, so
+the PROD fix should not be applied as-is. This is the "context trap" the
+engine is designed to catch.
+
+### 3. Partial match — system matches, environment does not
+
+- Query: `goods receipt posting error account determination not found`
+- Incident details: `M8149` · `SAP MM` · (no environment)
+
+**Expected:** Both `M8149` records show **✓ Error code ✓ System** badges, with
+no Environment badge on either — the engine is explicit that it cannot confirm
+the environment, rather than guessing.
+
+### 4. No context — text-only baseline
+
+- Query: same as above, with **Incident details** cleared.
+
+**Expected:** No badges at all, and overall confidence is lower than with
+matching context (the semantic similarity and historical success signals still
+work, but the match signals contribute nothing). Run this first, then repeat
+scenario 1 to watch the confidence jump.
+
+Also try the SAP authorization cluster: search
+`authorization error on financial reports` with error code `S_RS_COMP` —
+without context, `TIC-1001` (FICO) and `TIC-1004` (CO) carry no badges and
+rank by text; add `SAP CO` as the system and the CO record climbs, showing
+that *same error code, different module* is treated as a different case.

@@ -2,6 +2,7 @@
 
 import pytest
 
+from solution_intelligence.retrieval import IncidentContext
 from solution_intelligence.service import SolutionEngine
 from solution_intelligence.sources import load_filtered
 
@@ -39,3 +40,13 @@ def test_confidence_reflects_history(engine):
     results = engine.search("SAP authorization error on FI reports", top_k=5)
     high = next(r for r in results if r.entry.worked > r.entry.attempted * 0.7)
     assert high.confidence > 0.4
+
+
+def test_search_context_boosts_error_code_match(engine):
+    query = "SAP authorization error on FI reports"
+    context = IncidentContext(error_code="S_RS_COMP", environment="PROD")
+    baseline = engine.search(query, top_k=5)
+    boosted = engine.search(query, top_k=5, context=context)
+    matched = next(r for r in boosted if r.entry.error_code == "S_RS_COMP")
+    before = next(r for r in baseline if r.entry.id == matched.entry.id)
+    assert matched.confidence > before.confidence

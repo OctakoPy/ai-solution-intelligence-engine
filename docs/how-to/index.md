@@ -36,12 +36,12 @@ for hit in engine.search("SAP FI report access denied authorization error", top_
 
 ## Run the dataset sizes locally
 
-The dashboard exposes a dataset-size selector (Debug 3 / Small 8 / Full 76)
+The dashboard exposes a dataset-size selector (Debug 3 / Small 8 / Full 78)
 backed by the API. To re-process a different slice, restart the API after
 changing the selector, or pass a size directly:
 
 ```bash
-curl -X POST http://localhost:8004/api/ingest -H "Content-Type: application/json" -d '{"max_entries": 76}'
+curl -X POST http://localhost:8004/api/ingest -H "Content-Type: application/json" -d '{"max_entries": 78}'
 ```
 
 ## Add tests
