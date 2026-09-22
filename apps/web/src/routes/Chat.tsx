@@ -5,6 +5,7 @@ import { chatRespond, chatStart } from "@/lib/api";
 import type { RetrievedSolution } from "@/lib/types";
 import { PageHeader } from "@/components/ui/page-header";
 import { LanguageBadge } from "@/components/ui/language-badge";
+import { OutcomeFeedback } from "@/components/ui/outcome-feedback";
 import { SolutionDetails } from "@/components/ui/solution-details";
 
 interface DisplayTurn {
@@ -154,8 +155,14 @@ export default function Chat() {
                     </div>
                   )}
                   <div className="mt-3 flex items-center gap-2 text-gray-500">
-                    <ThumbsUp className="h-3.5 w-3.5" />
-                    <ThumbsDown className="h-3.5 w-3.5" />
+                    {turn.candidates && turn.candidates.length > 0 ? (
+                      <OutcomeFeedback entryId={turn.candidates[0].id} />
+                    ) : (
+                      <>
+                        <ThumbsUp className="h-3.5 w-3.5" />
+                        <ThumbsDown className="h-3.5 w-3.5" />
+                      </>
+                    )}
                     <Share2 className="h-3.5 w-3.5" />
                     <span className="ml-auto text-sm">{turn.timestamp}</span>
                   </div>

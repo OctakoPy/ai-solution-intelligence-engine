@@ -69,6 +69,25 @@ honest-gap cases, and whether the M8149 UAT context trap is resisted. A
 machine-readable summary is written to `data/eval_report.json` (gitignored;
 reproduce it any time with `just eval`).
 
+## Confirm outcomes (Resolution Memory)
+
+Every recommendation can be confirmed as worked or not worked, and the
+engine learns from it on the next search — no retraining:
+
+```bash
+# In the UI: "Did this work? Yes / No" on Find cards and under chat answers
+# Or directly:
+curl -X POST http://localhost:8004/api/outcomes \
+  -H "Content-Type: application/json" \
+  -d '{"entry_id": "TIC-1001", "success": true, "note": "resolved in 5 min"}'
+```
+
+Outcomes are appended to `data/resolution_memory.json` (gitignored; delete
+the file to reset the learned state) and folded into each record's
+`worked_count`. Confirmed failures demote a candidate on the next search
+(negative learning); confirmed successes boost it. The learning is
+idempotent — re-ingesting never double-counts — and survives restarts.
+
 ## Add tests
 
 Backend tests live in `tests/unit/` and run with pytest through uv:

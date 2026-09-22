@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
+from solution_intelligence.memory import ResolutionMemory
 from solution_intelligence.service import SolutionEngine
 from solution_intelligence.sources import load_filtered
-
-if TYPE_CHECKING:
-    pass
 
 DATASET_OPTIONS: list[tuple[str, int]] = [
     ("Debug (3)", 3),
@@ -24,6 +20,19 @@ GPU_LEVELS: list[str] = [
 
 _engine_cache: dict[int, SolutionEngine] = {}
 
+# One shared Resolution Memory for the whole API process, persisted next to
+# the dataset. Confirmed outcomes survive server restarts and apply to every
+# engine variant (the learning is per knowledge record, not per cache key).
+_memory: ResolutionMemory | None = None
+
+
+def _shared_memory() -> ResolutionMemory:
+    """Lazily build the process-wide Resolution Memory."""
+    global _memory
+    if _memory is None:
+        _memory = ResolutionMemory()
+    return _memory
+
 
 def get_or_build_engine(max_entries: int) -> SolutionEngine:
     """Return a cached engine for `max_entries`, building it on first call.
@@ -33,7 +42,7 @@ def get_or_build_engine(max_entries: int) -> SolutionEngine:
     """
     key = max_entries if max_entries > 0 else -1
     if key not in _engine_cache:
-        engine = SolutionEngine()
+        engine = SolutionEngine(memory=_shared_memory())
         entries = load_filtered(max_total=max_entries)
         engine.ingest(entries)
         _engine_cache[key] = engine
@@ -41,5 +50,19 @@ def get_or_build_engine(max_entries: int) -> SolutionEngine:
 
 
 def reset_cache() -> None:
-    """Drop all cached engines (used by tests)."""
+    """Drop all cached engines and swap in an in-memory-only Resolution
+    Memory.
+
+    Used by tests so they never touch the real on-disk outcome log;
+    production never calls this, so it keeps the persistent default.
+    """
+    global _memory
     _engine_cache.clear()
+    _memory = ResolutionMemory(path=None)
+
+
+def use_memory(memory: ResolutionMemory) -> None:
+    """Point newly built engines at a specific ResolutionMemory (tests)."""
+    reset_cache()
+    global _memory
+    _memory = memory
