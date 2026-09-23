@@ -16,9 +16,11 @@ from typing import TYPE_CHECKING
 
 from apps.api.models import EvidenceRecord
 from apps.api.views import SOURCE_LABELS
+from solution_intelligence.policy import is_context_trap, mismatched_signals
 
 if TYPE_CHECKING:
     from solution_intelligence.models import KnowledgeEntry, RetrievedSolution
+    from solution_intelligence.retrieval import IncidentContext
 
 
 def _source_label(source_type: str) -> str:
@@ -75,9 +77,19 @@ def hit_entry_group(
     return None
 
 
+# Context-trap warning: same error code, different environment (or any
+# matched cue contradicted elsewhere) usually means a different root cause.
+_CONTEXT_TRAP_CAVEAT = (
+    "Verify root cause before applying: this record matches part of your "
+    "incident context but conflicts on {fields} — evidence may be from a "
+    "different context."
+)
+
+
 def _build_caveats(
     hit: RetrievedSolution,
     all_entries: list[KnowledgeEntry],
+    context: IncidentContext | None = None,
 ) -> list[str]:
     """Rule-based caveats for a hit, in a fixed order."""
     caveats: list[str] = []
@@ -92,12 +104,17 @@ def _build_caveats(
             "No confirmed outcomes yet: this record has never been marked "
             "worked or failed, so its history is unknown."
         )
+    if is_context_trap(hit, context):
+        mismatched = mismatched_signals(hit.entry, context)
+        fields = " / ".join(m.replace("_", " ") for m in mismatched)
+        caveats.append(_CONTEXT_TRAP_CAVEAT.format(fields=fields))
     return caveats
 
 
 def attach_why(
     hit: RetrievedSolution,
     all_entries: list[KnowledgeEntry],
+    context: IncidentContext | None = None,
 ) -> dict:
     """Build the why-panel payload fields for one retrieval hit.
 
@@ -110,5 +127,5 @@ def attach_why(
         "worked": hit.entry.worked,
         "attempted": hit.entry.attempted,
         "evidence": _build_evidence(hit, all_entries),
-        "caveats": _build_caveats(hit, all_entries),
+        "caveats": _build_caveats(hit, all_entries, context=context),
     }

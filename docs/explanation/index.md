@@ -67,6 +67,32 @@ similarity alone. Search results are ranked by this outcome-aware confidence
 score (not by raw similarity), and the readout is always shown, so a
 low-confidence match looks low-confidence instead of looking like an answer.
 
+## Knows when not to guess
+
+Ranking honestly is only half of trust; the other half is changing the
+*action* when evidence is weak instead of inventing certainty. One shared
+abstain policy (`solution_intelligence/policy.py`) decides this for every
+surface — Find a Solution, Chat, and the pilot evaluation:
+
+| Confidence band | Engine behavior | `next_best_action` |
+| --- | --- | --- |
+| ≥ 0.90 | Answers confidently | none |
+| 0.75 – 0.90 | Offers nearest matches, asks for missing context | `ask_context` — names the missing error code / module / environment fields |
+| < 0.75 | Will not offer a fix | `escalate_sme` — hands off to a subject-matter expert, naming the nearest look-alike |
+
+The API attaches the resulting `next_best_action` payload to both
+`/api/search` and `/api/chat` responses, and the UI renders it as an amber
+banner. Because the chat thresholds and the evaluation's `ABSTAIN_THRESHOLD`
+are aliases of the same constants, tuning the policy is a one-line change
+that every surface obeys.
+
+The policy also detects the **context trap**: when a record matches one
+cue (say the error code) but conflicts on another that the incident
+supplied (say PROD vs UAT), its why panel carries a "verify root cause —
+evidence may be from a different context" caveat. The same error code on a
+different environment is usually a different root cause, and the engine
+says so rather than letting similarity hide it.
+
 ## Measuring whether it works: the pilot eval
 
 Confidence claims are only meaningful if they are measured. The evaluation

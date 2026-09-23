@@ -64,6 +64,16 @@ export interface SearchContext {
   environment?: string;
 }
 
+export type NextBestActionKind = "ask_context" | "escalate_sme";
+
+export interface NextBestAction {
+  action: NextBestActionKind;
+  message: string;
+  missing_fields: string[];
+  nearest_record_id: string | null;
+  nearest_record_title: string | null;
+}
+
 export interface RetrievedSolution {
   id: string;
   title: string;

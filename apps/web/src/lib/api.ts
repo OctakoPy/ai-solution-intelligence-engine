@@ -1,5 +1,6 @@
 import type {
   IngestResponse,
+  NextBestAction,
   OutcomeResponse,
   OverviewResponse,
   RetrievedSolution,
@@ -42,23 +43,32 @@ export interface SearchArgs {
 }
 
 export const search = (args: SearchArgs) =>
-  api<{ results: RetrievedSolution[] }>("/api/search", {
-    method: "POST",
-    body: JSON.stringify({
-      query: args.query,
-      top_k: args.top_k ?? 5,
-      ...(args.context
-        ? {
-            context: Object.fromEntries(
-              Object.entries(args.context).filter(([_, v]) => v?.trim()),
-            ),
-          }
-        : {}),
-    }),
-  });
+  api<{ results: RetrievedSolution[]; next_best_action: NextBestAction | null }>(
+    "/api/search",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        query: args.query,
+        top_k: args.top_k ?? 5,
+        ...(args.context
+          ? {
+              context: Object.fromEntries(
+                Object.entries(args.context).filter(([_, v]) => v?.trim()),
+              ),
+            }
+          : {}),
+      }),
+    },
+  );
+
+interface ChatApiResponse {
+  turns: Array<{ role: string; text: string; timestamp: string | null }>;
+  candidates: RetrievedSolution[];
+  next_best_action: NextBestAction | null;
+}
 
 export const chatStart = (query: string, session_id = "default") =>
-  api<{ turns: Array<{ role: string; text: string; timestamp: string | null }>; candidates: RetrievedSolution[] }>(
+  api<ChatApiResponse>(
     "/api/chat/start",
     {
       method: "POST",
@@ -67,7 +77,7 @@ export const chatStart = (query: string, session_id = "default") =>
   );
 
 export const chatRespond = (session_id: string, message: string) =>
-  api<{ turns: Array<{ role: string; text: string; timestamp: string | null }>; candidates: RetrievedSolution[] }>(
+  api<ChatApiResponse>(
     "/api/chat/respond",
     {
       method: "POST",

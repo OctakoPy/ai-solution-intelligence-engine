@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Send, ThumbsUp, ThumbsDown, Share2, Bot, Trash2, ChevronDown } from "lucide-react";
 import { chatRespond, chatStart } from "@/lib/api";
-import type { RetrievedSolution } from "@/lib/types";
+import type { NextBestAction, RetrievedSolution } from "@/lib/types";
 import { PageHeader } from "@/components/ui/page-header";
+import { NextBestActionBanner } from "@/components/ui/next-best-action-banner";
 import { LanguageBadge } from "@/components/ui/language-badge";
 import { OutcomeFeedback } from "@/components/ui/outcome-feedback";
 import { SolutionDetails } from "@/components/ui/solution-details";
@@ -13,6 +14,7 @@ interface DisplayTurn {
   text: string;
   timestamp: string | null;
   candidates?: RetrievedSolution[];
+  nextAction?: NextBestAction | null;
 }
 
 const FOLLOW_UPS = [
@@ -50,6 +52,7 @@ export default function Chat() {
           text: data.turns[1]?.text ?? "",
           timestamp: now(),
           candidates: data.candidates,
+          nextAction: data.next_best_action ?? null,
         },
       ]);
     },
@@ -66,6 +69,7 @@ export default function Chat() {
           text: data.turns[data.turns.length - 1]?.text ?? "",
           timestamp: now(),
           candidates: data.candidates,
+          nextAction: data.next_best_action ?? null,
         },
       ]);
     },
@@ -111,6 +115,12 @@ export default function Chat() {
                 </div>
                 <div className="max-w-[80%] rounded-xl border border-gray-200 bg-white p-4 text-base">
                   <div className="whitespace-pre-line">{turn.text}</div>
+                  {turn.nextAction && (
+                    <NextBestActionBanner
+                      action={turn.nextAction}
+                      className="mt-3"
+                    />
+                  )}
                   {turn.candidates && turn.candidates.length > 0 && (
                     <div className="mt-3 space-y-2">
                       <h4 className="text-sm font-semibold text-gray-500">

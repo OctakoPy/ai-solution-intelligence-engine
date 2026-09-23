@@ -102,6 +102,20 @@ class IncidentContext(BaseModel):
     environment: str | None = None
 
 
+class NextBestAction(BaseModel):
+    """Guidance returned when the engine does not offer a confident fix.
+
+    Emitted by the shared abstain policy: either ask for missing incident
+    context or escalate to a subject-matter expert.
+    """
+
+    action: Literal["ask_context", "escalate_sme"]
+    message: str
+    missing_fields: list[str] = []
+    nearest_record_id: str | None = None
+    nearest_record_title: str | None = None
+
+
 class SearchRequest(BaseModel):
     """Request body for /api/search."""
 
@@ -146,9 +160,10 @@ class RetrievedSolution(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    """List of search hits."""
+    """List of search hits, plus guidance when confidence is weak."""
 
     results: list[RetrievedSolution]
+    next_best_action: NextBestAction | None = None
 
 
 class OutcomeRequest(BaseModel):
@@ -198,6 +213,7 @@ class ChatResponse(BaseModel):
 
     turns: list[ChatTurn]
     candidates: list[RetrievedSolution]
+    next_best_action: NextBestAction | None = None
 
 
 class OverviewRecentRow(BaseModel):
