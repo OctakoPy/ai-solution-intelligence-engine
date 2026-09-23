@@ -195,7 +195,15 @@ def rank_results(
             candidate.entry, candidate.score, context
         )
         candidate.signals = matched_signals(candidate.entry, context)
-    pool.sort(key=lambda c: c.confidence, reverse=True)
+    # Deterministic ordering: confidence (the ranked-by value) desc, then
+    # success rate and similarity as tie-breakers, and finally entry id
+    # ascending so equal-scoring candidates always surface in the same
+    # order. Two stable passes keep the intent readable.
+    pool.sort(key=lambda c: c.entry.id)
+    pool.sort(
+        key=lambda c: (c.confidence, c.entry.success_rate, c.score),
+        reverse=True,
+    )
     return pool[:top_k]
 
 
