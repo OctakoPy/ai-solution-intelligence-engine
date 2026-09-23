@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from apps.api.demo_seed import seed_memory
 from solution_intelligence.memory import ResolutionMemory
 from solution_intelligence.service import SolutionEngine
 from solution_intelligence.sources import load_filtered
@@ -21,16 +22,24 @@ GPU_LEVELS: list[str] = [
 _engine_cache: dict[int, SolutionEngine] = {}
 
 # One shared Resolution Memory for the whole API process, persisted next to
-# the dataset. Confirmed outcomes survive server restarts and apply to every
-# engine variant (the learning is per knowledge record, not per cache key).
+# the dataset. On first use each process, the log is reset to the fixed demo
+# seed (see apps.api.demo_seed) so every restart shows the same known
+# learning state; outcomes recorded live during the session apply on top
+# until the next restart. Learning is per knowledge record, not per cache
+# key, so the shared memory applies to every engine variant.
 _memory: ResolutionMemory | None = None
 
 
 def _shared_memory() -> ResolutionMemory:
-    """Lazily build the process-wide Resolution Memory."""
+    """Lazily build the process-wide Resolution Memory.
+
+    The first build per process resets the log to the fixed demo seed, so
+    every API restart starts from the same known learning state.
+    """
     global _memory
     if _memory is None:
         _memory = ResolutionMemory()
+        seed_memory(_memory)
     return _memory
 
 
@@ -53,8 +62,9 @@ def reset_cache() -> None:
     """Drop all cached engines and swap in an in-memory-only Resolution
     Memory.
 
-    Used by tests so they never touch the real on-disk outcome log;
-    production never calls this, so it keeps the persistent default.
+    Used by tests so they never touch the real on-disk outcome log nor the
+    demo seed (the in-memory swap is never seeded); production never calls
+    this, so it keeps the persistent, seeded default.
     """
     global _memory
     _engine_cache.clear()

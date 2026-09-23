@@ -101,6 +101,7 @@ class ResolutionMemory:
         note: str = "",
         context: IncidentContext | None = None,
         source: str = "api",
+        timestamp: str | None = None,
     ) -> OutcomeRecord:
         """Append a confirmed outcome and persist the log.
 
@@ -110,6 +111,9 @@ class ResolutionMemory:
             note: Optional free-text context from the consultant.
             context: Optional incident context captured with the outcome.
             source: Where the outcome came from (``"api"``, ``"ui"``).
+            timestamp: Optional ISO-8601 timestamp to store instead of the
+                current time (used by the demo seed so recency stays
+                deterministic relative to seed time).
 
         Returns:
             The stored record.
@@ -121,12 +125,26 @@ class ResolutionMemory:
             error_code=context.error_code if context else None,
             module=context.module if context else None,
             environment=context.environment if context else None,
-            timestamp=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            timestamp=(
+                timestamp
+                if timestamp is not None
+                else datetime.now(timezone.utc).isoformat(timespec="seconds")
+            ),
             source=source,
         )
         self._records.append(record)
         self._save()
         return record
+
+    def clear(self) -> None:
+        """Drop every recorded outcome and persist the empty log.
+
+        Intended for reseeding at startup, before any :meth:`apply` has
+        folded deltas into live entries. It does not un-apply deltas that
+        were already folded into entries earlier in the process.
+        """
+        self._records.clear()
+        self._save()
 
     def entry_deltas(self) -> dict[str, tuple[int, int]]:
         """Recompute per-entry ``(worked, attempted)`` deltas from the log.

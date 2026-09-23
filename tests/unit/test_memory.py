@@ -114,6 +114,27 @@ def test_malformed_log_raises(tmp_path):
         ResolutionMemory(path=log)
 
 
+def test_clear_empties_and_persists(tmp_path):
+    """clear() wipes the log in memory and on disk."""
+    log = tmp_path / "memory.json"
+    memory = ResolutionMemory(path=log)
+    memory.record("T1", True, source="test")
+    assert len(memory) == 1
+
+    memory.clear()
+    assert len(memory) == 0
+    assert memory.stats()["total"] == 0
+    assert len(ResolutionMemory(path=log)) == 0
+
+
+def test_record_accepts_explicit_timestamp():
+    """An explicit timestamp overrides the clock (used by the demo seed)."""
+    memory = ResolutionMemory(path=None)
+    memory.record("T1", True, source="ui", timestamp="2026-09-20T09:00:00+00:00")
+    stats = memory.stats()
+    assert stats["last_outcome_at"] == "2026-09-20T09:00:00+00:00"
+
+
 # --- Dashboard stats ----------------------------------------------------------
 
 
