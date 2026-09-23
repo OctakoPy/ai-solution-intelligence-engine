@@ -40,6 +40,24 @@ export interface View {
 
 export type Signal = "error_code" | "module" | "environment";
 
+export type SignalKey =
+  | "semantic"
+  | "error_code"
+  | "module"
+  | "environment"
+  | "success"
+  | "recency"
+  | "feedback";
+
+export interface EvidenceRecord {
+  id: string;
+  title: string;
+  source: string;
+  date: string;
+  worked: number;
+  attempted: number;
+}
+
 export interface SearchContext {
   error_code?: string;
   module?: string;
@@ -61,6 +79,11 @@ export interface RetrievedSolution {
   english_description?: string;
   english_resolution?: string;
   signals?: Signal[];
+  signal_breakdown?: Partial<Record<SignalKey, number>>;
+  worked?: number;
+  attempted?: number;
+  evidence?: EvidenceRecord[];
+  caveats?: string[];
 }
 
 export interface ChatTurn {

@@ -214,6 +214,7 @@ class RetrievedSolution:
     confidence: float  # overall quality 0..1
     duplicate_of: str | None = None
     signals: list[str] = field(default_factory=list)
+    signal_breakdown: dict[str, float] = field(default_factory=dict)
 
     @property
     def combined_score(self) -> float:

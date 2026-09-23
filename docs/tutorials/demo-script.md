@@ -195,8 +195,11 @@ The engine parses the semantics and finds the most similar problems people
 have solved before — instantly. Top hit: `TIC-1001`, a near-identical auth
 issue that was **worked 8 out of 8 times**, with a high-confidence readout.
 
-And this is the part I love — I can expand it and get the **why**: the exact
-step-by-step resolution and the system it came from.
+And this is the part I love — I can expand it and get the **why**: a panel
+that breaks the confidence score into its weighted signals, shows the prior
+success rate (worked 8 of 8), lists the supporting records from other source
+systems that corroborate the fix, and flags any caveats. The exact
+step-by-step resolution and the system it came from are right below.
 
 Now watch the bottom of the list. The engine is multilingual — that English
 query just surfaced Bahasa Malaysia and Chinese translations of the same auth

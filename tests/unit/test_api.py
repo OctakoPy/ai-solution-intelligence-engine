@@ -130,6 +130,103 @@ async def test_search(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+async def test_search_returns_why_panel_fields(client: AsyncClient) -> None:
+    """Search hits carry the trust-first why-panel evidence payload."""
+    await client.post("/api/ingest", json={"max_entries": 12})
+    resp = await client.post(
+        "/api/search",
+        json={"query": "SAP authorization error on FI reports", "top_k": 3},
+    )
+    assert resp.status_code == 200
+    results = resp.json()["results"]
+    assert results
+    r = results[0]
+
+    # Per-signal breakdown: all seven signals present, non-negative, and
+    # summing (approximately) to the displayed confidence.
+    breakdown = r["signal_breakdown"]
+    assert set(breakdown) == {
+        "semantic",
+        "error_code",
+        "module",
+        "environment",
+        "success",
+        "recency",
+        "feedback",
+    }
+    assert all(v >= 0.0 for v in breakdown.values())
+    assert abs(sum(breakdown.values()) - r["confidence"]) < 0.01
+
+    # Prior success counts.
+    assert isinstance(r["worked"], int)
+    assert isinstance(r["attempted"], int)
+    assert r["attempted"] >= 0
+    assert r["worked"] <= r["attempted"]
+
+    # Evidence: the hit itself is always first, with matching counts.
+    evidence = r["evidence"]
+    assert evidence
+    assert evidence[0]["id"] == r["id"]
+    assert evidence[0]["worked"] == r["worked"]
+    assert all("id" in e and "title" in e and "source" in e for e in evidence)
+
+    # Caveats are deterministic strings.
+    assert isinstance(r["caveats"], list)
+    assert all(isinstance(c, str) for c in r["caveats"])
+
+
+@pytest.mark.anyio
+async def test_search_evidence_includes_duplicate_group_peers(
+    client: AsyncClient,
+) -> None:
+    """Records in the same duplicate_group back each other up as evidence."""
+    await client.post("/api/ingest", json={"max_entries": 0})
+    # "password reset" surfaces both password_reset_generic records
+    # (TIC-1014, TIC-1015), so each hit should list the other as evidence.
+    resp = await client.post(
+        "/api/search", json={"query": "password reset", "top_k": 5}
+    )
+    assert resp.status_code == 200
+    results = resp.json()["results"]
+    grouped = [
+        r
+        for r in results
+        if r["evidence"] and any(e["id"] != r["id"] for e in r["evidence"])
+    ]
+    assert grouped, "expected at least one hit with cross-record evidence"
+    hit = grouped[0]
+    peer_ids = [e["id"] for e in hit["evidence"]]
+    assert hit["id"] == peer_ids[0], "self must be listed first"
+    assert len(peer_ids) >= 2, "grouped hit must list at least one peer"
+
+
+@pytest.mark.anyio
+async def test_chat_candidates_carry_why_panel_fields(client: AsyncClient) -> None:
+    """Chat candidates expose the same evidence payload as search."""
+    await client.post("/api/ingest", json={"max_entries": 12})
+    resp = await client.post(
+        "/api/chat/start",
+        json={"query": "SAP authorization error on FI reports", "session_id": "why1"},
+    )
+    assert resp.status_code == 200
+    candidates = resp.json()["candidates"]
+    assert candidates
+    c = candidates[0]
+    assert set(c["signal_breakdown"]) == {
+        "semantic",
+        "error_code",
+        "module",
+        "environment",
+        "success",
+        "recency",
+        "feedback",
+    }
+    assert c["evidence"]
+    assert c["evidence"][0]["id"] == c["id"]
+    assert isinstance(c["caveats"], list)
+
+
+@pytest.mark.anyio
 async def test_search_surfaces_multilingual(client: AsyncClient) -> None:
     resp = await client.post(
         "/api/search",

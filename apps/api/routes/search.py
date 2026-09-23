@@ -12,6 +12,7 @@ from apps.api.models import (
     SearchResponse,
 )
 from apps.api.views import SOURCE_LABELS
+from apps.api.why import attach_why
 from solution_intelligence.retrieval import IncidentContext as CoreContext
 from solution_intelligence.retrieval import matched_signals
 
@@ -35,6 +36,7 @@ async def search(req: SearchRequest) -> SearchResponse:
     engine = get_or_build_engine(0)
     context = _to_context(req.context)
     hits = engine.search(req.query, top_k=req.top_k, context=context)
+    all_entries = engine.index.entries
     payload = [
         RetrievedSolution(
             id=h.entry.id,
@@ -51,6 +53,7 @@ async def search(req: SearchRequest) -> SearchResponse:
             english_description=h.entry.english_description,
             english_resolution=h.entry.english_resolution,
             signals=matched_signals(h.entry, context),
+            **attach_why(h, all_entries),
         )
         for h in hits
     ]

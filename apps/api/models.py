@@ -110,6 +110,17 @@ class SearchRequest(BaseModel):
     context: IncidentContext | None = None
 
 
+class EvidenceRecord(BaseModel):
+    """One supporting record behind a recommendation's evidence panel."""
+
+    id: str
+    title: str
+    source: str
+    date: str = ""
+    worked: int = 0
+    attempted: int = 0
+
+
 class RetrievedSolution(BaseModel):
     """A single retrieved search hit."""
 
@@ -127,6 +138,11 @@ class RetrievedSolution(BaseModel):
     english_description: str = ""
     english_resolution: str = ""
     signals: list[str] = []
+    signal_breakdown: dict[str, float] = {}
+    worked: int = 0
+    attempted: int = 0
+    evidence: list[EvidenceRecord] = []
+    caveats: list[str] = []
 
 
 class SearchResponse(BaseModel):
