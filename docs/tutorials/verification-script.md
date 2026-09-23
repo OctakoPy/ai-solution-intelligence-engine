@@ -78,18 +78,18 @@ behind its score, its track record, and the records that back it up.
 
 ---
 
-## 3. Knows when not to guess (issue #18)
+## 3. Proven fixes win even when the score looks weak (issue #18)
 
 **Type:** `the custom abap program zreport99 keeps erroring`
 
 | What to do | What you should see |
 | --- | --- |
-| Look **above the results** | An amber banner: **"Knows when not to guess — escalate"** with *No historical record is a confident match (best: 41%). Escalate to a subject-matter expert instead of applying a guess.* The number in the banner matches the top card's 41%. |
-| Read the results | They are still listed — but as look-alikes for a specialist, not as an answer. The banner is what changes the *action*. |
-| **Switch to Chat** and send the same query | The assistant reply refuses to guess **and** the same amber banner appears under the message. The top source card shows **60%** (chat's display scale is boosted to stay consistent with Find), still below the band. |
+| Read the top result | **TIC-1001** at **41%** — but the badge and Prior success show **Worked 8 of 8 times**. |
+| Look **above the results** | **No amber banner.** The engine proceeds with the proven fix rather than escalating a 41% score that matches a record with a perfect track record. |
+| **Switch to Chat** and send the same query | The assistant reply offers the proven fix as a starting point (the chat wording band). The top source card shows a boosted score on chat's display scale. |
 
-**Point of this step:** when evidence is weak, the engine changes the action
-— it hands off to a human instead of inventing certainty.
+**Point of this step:** a low similarity score can still be the right answer
+— when the record has worked every time it was tried, the engine trusts the history over the percentage. (When the record is genuinely unproven, the mid-band banner still catches it.)
 
 ---
 
@@ -155,7 +155,7 @@ supported language surfaces the right fix in any other.
 
 1. Search the FI authorization query → *proven fix wins, 8/8 worked*.
 2. Expand it → *WHY THIS: score math + track record + caveats*.
-3. Search `zreport99` → *amber banner: escalate, won't guess*.
+3. Search `zreport99` → *41% but proven 8/8 — engine proceeds, no banner*.
 4. Trap: `goods receipt posting error` + M8149 in PROD, then UAT →
    *different root cause wins + "verify root cause" caveat*.
 

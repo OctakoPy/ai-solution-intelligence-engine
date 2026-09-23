@@ -24,8 +24,32 @@ from solution_intelligence.retrieval import IncidentContext
 ABSTAIN_THRESHOLD = 0.75
 # At or above this the engine answers confidently (chat wording band).
 CONFIDENT_THRESHOLD = 0.90
+# Below this similarity the engine does not trust the match even if
+# the record's history is perfect — the score says the query is not
+# really about this record, so the banner still appears.
+PROVEN_FLOOR = 0.35
+# A record that has worked every time (with enough attempts) is a go
+# regardless of composite confidence. Abstain is for genuinely
+# weak / unproven matches.
+PROVEN_MIN_ATTEMPTS = 3
 
 Action = Literal["ask_context", "escalate_sme", "proceed"]
+
+
+def is_proven(top: RetrievedSolution | None) -> bool:
+    """True when this hit has worked every time it was tried.
+
+    Used to bypass the abstain banner for proven fixes whose
+    composite confidence happens to be low (e.g. a strong match
+    strength with no structured context). A record needs a real
+    track record before we trust it enough to skip escalate.
+    """
+    if top is None or top.entry is None:
+        return False
+    attempted = top.entry.attempted
+    if attempted < PROVEN_MIN_ATTEMPTS:
+        return False
+    return top.entry.worked >= attempted
 
 
 @dataclass(frozen=True)
@@ -76,6 +100,8 @@ def decide(
             action="ask_context",
             next_best_action=_ask_context_payload(top, context),
         )
+    if is_proven(top) and confidence >= PROVEN_FLOOR:
+        return PolicyVerdict(action="proceed")
     return PolicyVerdict(
         action="escalate_sme",
         next_best_action=_escalate_payload(top),

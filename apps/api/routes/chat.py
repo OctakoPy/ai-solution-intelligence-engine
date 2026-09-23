@@ -20,7 +20,12 @@ from apps.api.policy import CHAT_SCORE_BOOST, evaluate_policy, to_next_best_acti
 
 from apps.api.views import SOURCE_LABELS
 from apps.api.why import attach_why
-from solution_intelligence.policy import ABSTAIN_THRESHOLD, CONFIDENT_THRESHOLD
+from solution_intelligence.policy import (
+    ABSTAIN_THRESHOLD,
+    CONFIDENT_THRESHOLD,
+    PROVEN_FLOOR,
+    PROVEN_MIN_ATTEMPTS,
+)
 from solution_intelligence.retrieval import IncidentContext as CoreContext
 
 router = APIRouter(tags=["chat"])
@@ -103,7 +108,14 @@ def _build_assistant_turn(
             return next_best_action.message
         return "No confident matches found. Try describing the issue differently."
     top = candidates[0]
-    if top.score < _CHAT_LOW_CONFIDENCE_THRESHOLD:
+    if (
+        top.score < _CHAT_LOW_CONFIDENCE_THRESHOLD
+        and not (
+            top.worked >= top.attempted
+            and top.attempted >= PROVEN_MIN_ATTEMPTS
+            and top.confidence >= PROVEN_FLOOR
+        )
+    ):
         best = round(top.score * 100)
         lines = [
             "None of the historical records are a confident match — the best "
@@ -123,7 +135,14 @@ def _build_assistant_turn(
             )
         )
         return "\n\n".join(lines)
-    if top.score < _CHAT_CONFIDENT_THRESHOLD:
+    if (
+        top.score < _CHAT_CONFIDENT_THRESHOLD
+        and not (
+            top.worked >= top.attempted
+            and top.attempted >= PROVEN_MIN_ATTEMPTS
+            and top.confidence >= PROVEN_FLOOR
+        )
+    ):
         best = round(top.score * 100)
         lines = [
             (
