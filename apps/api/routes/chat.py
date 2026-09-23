@@ -17,6 +17,7 @@ from apps.api.models import (
     RetrievedSolution,
 )
 from apps.api.policy import CHAT_SCORE_BOOST, evaluate_policy, to_next_best_action
+
 from apps.api.views import SOURCE_LABELS
 from apps.api.why import attach_why
 from solution_intelligence.policy import ABSTAIN_THRESHOLD, CONFIDENT_THRESHOLD
@@ -103,7 +104,7 @@ def _build_assistant_turn(
         return "No confident matches found. Try describing the issue differently."
     top = candidates[0]
     if top.score < _CHAT_LOW_CONFIDENCE_THRESHOLD:
-        best = int(top.score * 100)
+        best = round(top.score * 100)
         lines = [
             "None of the historical records are a confident match — the best "
             f"one is only {best}% similar. I won't guess a fix, because a "
@@ -112,7 +113,7 @@ def _build_assistant_turn(
             "a specialist:",
         ]
         for idx, c in enumerate(candidates, start=1):
-            lines.append(f"{idx}. **{c.title}** — {int(c.score * 100)}% match")
+            lines.append(f"{idx}. **{c.title}** — {round(c.score * 100)}% match")
         lines.append(
             next_best_action.message
             if next_best_action is not None
@@ -123,7 +124,7 @@ def _build_assistant_turn(
         )
         return "\n\n".join(lines)
     if top.score < _CHAT_CONFIDENT_THRESHOLD:
-        best = int(top.score * 100)
+        best = round(top.score * 100)
         lines = [
             (
                 f"I'm not fully certain of an exact match — the closest record "
@@ -132,7 +133,7 @@ def _build_assistant_turn(
             "Here are the closest matches I could find — are any of these helpful?",
         ]
         for idx, c in enumerate(candidates, start=1):
-            lines.append(f"{idx}. **{c.title}** — {int(c.score * 100)}% match")
+            lines.append(f"{idx}. **{c.title}** — {round(c.score * 100)}% match")
         if next_best_action is not None:
             lines.append(next_best_action.message)
         return "\n\n".join(lines)
@@ -141,10 +142,12 @@ def _build_assistant_turn(
         "Here are the steps that resolved it for similar cases:",
     ]
     for idx, c in enumerate(candidates, start=1):
-        lines.append(f"{idx}. **{c.title}** — {int(c.score * 100)}% match")
-    lines.append(f"This solved the issue in {int(top.score * 100)}% of similar cases.")
+        lines.append(f"{idx}. **{c.title}** — {round(c.score * 100)}% match")
+    lines.append(
+        f"This solved the issue in {round(top.score * 100)}% of similar cases."
+    )
     sources = " · ".join(
-        f"{c.title} ({c.source}) – {c.date} ({int(c.score * 100)}%)"
+        f"{c.title} ({c.source}) – {c.date} ({round(c.score * 100)}%)"
         for c in candidates[:2]
     )
     lines.append(f"Sources: {sources}")
@@ -166,7 +169,7 @@ async def chat_start(req: ChatStartRequest) -> ChatResponse:
         if session.turns
         else []
     )
-    verdict = evaluate_policy(session.turns[-1].candidates, context)
+    verdict = evaluate_policy(session.turns[-1].candidates, context, surface="chat")
     reply = _build_assistant_turn(
         req.query, candidates, next_best_action=to_next_best_action(verdict)
     )
@@ -195,7 +198,7 @@ async def chat_respond(req: ChatRespondRequest) -> ChatResponse:
     candidates = _hits_to_solutions(
         core_hits, all_entries=engine.index.entries, context=session.context
     )
-    verdict = evaluate_policy(core_hits, session.context)
+    verdict = evaluate_policy(core_hits, session.context, surface="chat")
     reply = _build_assistant_turn(
         req.message, candidates, next_best_action=to_next_best_action(verdict)
     )

@@ -334,6 +334,49 @@ async def test_chat_low_confidence_returns_next_best_action(
 
 
 @pytest.mark.anyio
+async def test_policy_matches_displayed_score_on_both_surfaces(
+    client: AsyncClient,
+) -> None:
+    """The invariant: guidance must agree with the number on screen.
+
+    Find displays confidence directly; Chat boosts similarity. On each
+    surface, a top hit below the abstain band must carry a next-best
+    action, and one at or above the confident band must not.
+    """
+    await client.post("/api/ingest", json={"max_entries": 0})
+
+    for query in (
+        "user cannot access FI reports in SAP, authorization error",
+        "goods receipt posting error",
+        "the custom abap program zreport99 keeps erroring",
+    ):
+        # --- Find surface: displayed == confidence ---
+        find = (
+            await client.post("/api/search", json={"query": query, "top_k": 3})
+        ).json()
+        top = find["results"][0]
+        displayed = top["score"]  # find displays confidence as score
+        if displayed < 0.75:
+            assert find["next_best_action"] is not None, query
+        elif displayed >= 0.90:
+            assert find["next_best_action"] is None, query
+
+        # --- Chat surface: displayed == boosted combined_score ---
+        chat = (
+            await client.post(
+                "/api/chat/start",
+                json={"query": query, "session_id": f"inv-{abs(hash(query))}"},
+            )
+        ).json()
+        ctop = chat["candidates"][0]
+        cdisplayed = ctop["score"]  # chat displays the boosted score
+        if cdisplayed < 0.75:
+            assert chat["next_best_action"] is not None, query
+        elif cdisplayed >= 0.90:
+            assert chat["next_best_action"] is None, query
+
+
+@pytest.mark.anyio
 async def test_search_surfaces_multilingual(client: AsyncClient) -> None:
     resp = await client.post(
         "/api/search",
