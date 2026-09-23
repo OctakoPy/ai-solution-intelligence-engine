@@ -141,6 +141,48 @@ class ConfidenceScorer:
         )
         return round(min(1.0, max(0.0, base)), 3)
 
+    def breakdown(
+        self,
+        entry: KnowledgeEntry,
+        similarity: float,
+        context: IncidentContext | None = None,
+    ) -> dict[str, float]:
+        """Return the per-signal weighted contributions behind :meth:`score`.
+
+        Each key holds ``weight * raw_signal`` for one of the seven
+        deterministic signals, so ``sum(values)`` equals the composite
+        confidence (before clamping/rounding). This is what the API exposes
+        so the "why" panel can show exactly how a score was composed:
+
+            >>> scorer = ConfidenceScorer()
+            >>> entry = KnowledgeEntry(
+            ...     id="X", source_type="ticket", title="t", description="d",
+            ...     resolution="r", worked_count=(10, 10),
+            ... )
+            >>> parts = scorer.breakdown(entry, 0.8)
+            >>> parts["semantic"], parts["success"], parts["error_code"]
+            (0.2, 0.2, 0.0)
+            >>> round(sum(parts.values()), 3) == scorer.score(entry, 0.8)
+            True
+
+        Args:
+            entry: The candidate solution record.
+            similarity: Semantic similarity of the incident to the entry (0..1).
+            context: Optional structured incident context used by the
+                error-code, module, and environment match signals.
+        """
+        return {
+            "semantic": SIGNAL_WEIGHTS["semantic"] * similarity,
+            "error_code": SIGNAL_WEIGHTS["error_code"]
+            * _error_code_match(entry, context),
+            "module": SIGNAL_WEIGHTS["module"] * _module_match(entry, context),
+            "environment": SIGNAL_WEIGHTS["environment"]
+            * _environment_match(entry, context),
+            "success": SIGNAL_WEIGHTS["success"] * entry.success_rate,
+            "recency": SIGNAL_WEIGHTS["recency"] * _recency_score(entry),
+            "feedback": SIGNAL_WEIGHTS["feedback"] * _feedback_score(entry),
+        }
+
 
 def matched_signals(
     entry: KnowledgeEntry,
@@ -177,7 +219,8 @@ def rank_results(
 
     * a wider similarity pool is fetched first (3x) so a confident candidate
       is not cut off by a similarity-only top-k;
-    * each candidate gets its deterministic confidence and matched signals;
+    * each candidate gets its deterministic confidence, the per-signal
+      breakdown behind it, and its matched context signals;
     * results are then ranked by that confidence and trimmed to ``top_k``.
 
     ``adjust`` optionally mutates raw similarity before scoring; the chat
@@ -187,11 +230,13 @@ def rank_results(
     Returns:
         The ``top_k`` highest-confidence candidates, best first.
     """
+    scorer = ConfidenceScorer()
     pool = index.query(query, top_k=max(top_k * 3, 3))
     for candidate in pool:
         if adjust is not None:
             adjust(candidate)
-        candidate.confidence = ConfidenceScorer().score(
+        candidate.confidence = scorer.score(candidate.entry, candidate.score, context)
+        candidate.signal_breakdown = scorer.breakdown(
             candidate.entry, candidate.score, context
         )
         candidate.signals = matched_signals(candidate.entry, context)

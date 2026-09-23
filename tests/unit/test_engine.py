@@ -200,6 +200,40 @@ def test_confidence_scorer():
     assert scorer.score(strong, 0.9) > scorer.score(weak, 0.7)
 
 
+def test_confidence_breakdown_sums_to_score():
+    """The per-signal breakdown composes exactly the composite score."""
+    scorer = ConfidenceScorer()
+    entry = make_entry(worked=(7, 10))
+    entry.error_code = "S_RFC"
+    entry.date = "2025-06-01"
+    context = IncidentContext(error_code="S_RFC", module="SAP FI")
+    entry.module = "SAP FI"
+
+    parts = scorer.breakdown(entry, 0.8, context)
+    assert set(parts) == set(SIGNAL_WEIGHTS)
+    assert parts["semantic"] == pytest.approx(0.25 * 0.8)
+    assert parts["error_code"] == pytest.approx(0.15)  # exact match fires
+    assert parts["module"] == pytest.approx(0.15)  # exact module match
+    assert parts["success"] == pytest.approx(0.20 * 0.7)
+    assert 0.0 < parts["recency"] <= 0.10
+    assert parts["feedback"] == 0.0  # default feedback is neutral
+    # The composite score is the breakdown sum, rounded to 3 decimals.
+    assert sum(parts.values()) == pytest.approx(
+        scorer.score(entry, 0.8, context), abs=5e-4
+    )
+
+
+def test_confidence_breakdown_without_context_has_no_match_signals():
+    scorer = ConfidenceScorer()
+    entry = make_entry(worked=(5, 5))
+    entry.error_code = "S_RFC"
+    parts = scorer.breakdown(entry, 0.5, context=None)
+    assert parts["error_code"] == 0.0
+    assert parts["module"] == 0.0
+    assert parts["environment"] == 0.0
+    assert parts["semantic"] == pytest.approx(0.25 * 0.5)
+
+
 def test_signal_weights_sum_to_one():
     assert sum(SIGNAL_WEIGHTS.values()) == 1.0
 
