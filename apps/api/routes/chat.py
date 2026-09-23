@@ -16,6 +16,7 @@ from apps.api.models import (
     RetrievedSolution,
 )
 from apps.api.views import SOURCE_LABELS
+from apps.api.why import attach_why
 from solution_intelligence.retrieval import IncidentContext as CoreContext
 
 router = APIRouter(tags=["chat"])
@@ -54,7 +55,11 @@ def _display_score(h) -> float:
     return round(min(1.0, h.combined_score * _CHAT_SCORE_BOOST), 3)
 
 
-def _hits_to_solutions(hits) -> list[RetrievedSolution]:
+def _hits_to_solutions(
+    hits,
+    all_entries: list | None = None,
+) -> list[RetrievedSolution]:
+    all_entries = all_entries if all_entries is not None else []
     return [
         RetrievedSolution(
             id=h.entry.id,
@@ -70,6 +75,7 @@ def _hits_to_solutions(hits) -> list[RetrievedSolution]:
             english_title=h.entry.english_title,
             english_description=h.entry.english_description,
             english_resolution=h.entry.english_resolution,
+            **attach_why(h, all_entries),
         )
         for h in hits
     ]
@@ -131,7 +137,11 @@ async def chat_start(req: ChatStartRequest) -> ChatResponse:
         req.session_id, req.query, context=_to_context(req.context)
     )
     candidates = (
-        _hits_to_solutions(session.turns[-1].candidates) if session.turns else []
+        _hits_to_solutions(
+            session.turns[-1].candidates, all_entries=engine.index.entries
+        )
+        if session.turns
+        else []
     )
     reply = _build_assistant_turn(req.query, candidates)
     session.add_system(reply)
@@ -148,10 +158,14 @@ async def chat_respond(req: ChatRespondRequest) -> ChatResponse:
     engine = get_or_build_engine(0)
     if req.session_id not in engine.agent.sessions:
         session = engine.agent.start(req.session_id, req.message)
-        candidates = _hits_to_solutions(session.turns[-1].candidates)
+        candidates = _hits_to_solutions(
+            session.turns[-1].candidates, all_entries=engine.index.entries
+        )
     else:
         session = engine.agent.respond(req.session_id, req.message)
-        candidates = _hits_to_solutions(session.turns[-1].candidates)
+        candidates = _hits_to_solutions(
+            session.turns[-1].candidates, all_entries=engine.index.entries
+        )
     reply = _build_assistant_turn(req.message, candidates)
     session.add_system(reply)
     turns: list[ChatTurn] = []

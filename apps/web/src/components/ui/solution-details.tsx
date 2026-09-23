@@ -3,6 +3,7 @@ import { Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RetrievedSolution } from "@/lib/types";
 import { LanguageBadge } from "./language-badge";
+import { WhyPanel } from "./why-panel";
 
 export interface SolutionDetailsProps {
   solution: RetrievedSolution;
@@ -61,6 +62,8 @@ export function SolutionDetails({ solution, className }: SolutionDetailsProps) {
 
       <p className="pt-1 text-sm font-medium text-gray-500">Resolution</p>
       <p className="text-base text-gray-700 whitespace-pre-wrap">{resolution}</p>
+
+      <WhyPanel solution={solution} className="mt-2" />
     </div>
   );
 }
