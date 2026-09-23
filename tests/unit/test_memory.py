@@ -114,6 +114,58 @@ def test_malformed_log_raises(tmp_path):
         ResolutionMemory(path=log)
 
 
+def test_clear_empties_and_persists(tmp_path):
+    """clear() wipes the log in memory and on disk."""
+    log = tmp_path / "memory.json"
+    memory = ResolutionMemory(path=log)
+    memory.record("T1", True, source="test")
+    assert len(memory) == 1
+
+    memory.clear()
+    assert len(memory) == 0
+    assert memory.stats()["total"] == 0
+    assert len(ResolutionMemory(path=log)) == 0
+
+
+def test_record_accepts_explicit_timestamp():
+    """An explicit timestamp overrides the clock (used by the demo seed)."""
+    memory = ResolutionMemory(path=None)
+    memory.record("T1", True, source="ui", timestamp="2026-09-20T09:00:00+00:00")
+    stats = memory.stats()
+    assert stats["last_outcome_at"] == "2026-09-20T09:00:00+00:00"
+
+
+# --- Dashboard stats ----------------------------------------------------------
+
+
+def test_stats_empty_memory_reports_honest_zeros():
+    """An untouched memory reports zeros, never fabricated numbers."""
+    stats = ResolutionMemory(path=None).stats()
+    assert stats == {
+        "total": 0,
+        "worked": 0,
+        "rejected": 0,
+        "success_rate": 0.0,
+        "entries_learned": 0,
+        "last_outcome_at": None,
+    }
+
+
+def test_stats_aggregates_confirmed_outcomes():
+    memory = ResolutionMemory(path=None)
+    memory.record("A", True, source="test")
+    memory.record("A", True, source="test")
+    memory.record("A", False, source="test")
+    memory.record("B", False, source="test")
+    stats = memory.stats()
+    assert stats["total"] == 4
+    assert stats["worked"] == 2
+    assert stats["rejected"] == 2
+    assert stats["success_rate"] == 0.5
+    assert stats["entries_learned"] == 2
+    assert stats["last_outcome_at"]  # set at record time
+
+
 # --- Engine integration: the learning loop ------------------------------------
 
 

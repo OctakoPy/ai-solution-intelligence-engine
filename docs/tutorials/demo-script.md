@@ -14,6 +14,26 @@ non-technical voiceover version.
 
 ---
 
+## Resolution Memory (Overview) — seeded demo state
+
+The **Overview** page's *Resolution Memory* panel is seeded for the demo. On
+**every API restart** the outcome log resets to a fixed seed of **14
+outcomes** — **11 worked / 3 rejected** across **14 knowledge records** (79%
+success rate) — with the most recent outcome less than an hour old, so the
+panel (donut, tallies, "last outcome … ago") is populated on the first frame
+of every run.
+
+- Live thumbs recorded during the demo **add on top** of the seed; the next
+  restart wipes back to the seed.
+- The seed deliberately avoids every record this script quotes (`TIC-1001`
+  stays **8/8**, and the VPN, auth, multilingual, chat, honest-gap, and
+  `M8149` context records keep their scripted track records), so scripted
+  rankings are unaffected.
+- After recording an outcome live, **hard-refresh Overview** (Ctrl+R) — the
+  dashboard query caches for 30 seconds.
+
+---
+
 ## Find a Solution
 
 ### 1. Canonical high-confidence match (best case)

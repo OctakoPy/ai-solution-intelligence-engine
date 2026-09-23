@@ -259,6 +259,18 @@ class OverviewCategoryTimeRow(BaseModel):
     avg_time: str
 
 
+class OverviewMemoryStats(BaseModel):
+    """Aggregate Resolution Memory learning stats for the dashboard."""
+
+    total_outcomes: int = 0
+    worked: int = 0
+    rejected: int = 0
+    success_rate: float = 0.0
+    entries_learned: int = 0
+    proven_fixes: int = 0
+    last_outcome_at: str | None = None
+
+
 class OverviewResponse(BaseModel):
     """Top-level payload for the Overview page."""
 
@@ -272,3 +284,4 @@ class OverviewResponse(BaseModel):
     recent: list[OverviewRecentRow]
     flagged: list[OverviewFlaggedRow] = []
     resolution_by_category: list[OverviewCategoryTimeRow] = []
+    memory_stats: OverviewMemoryStats | None = None

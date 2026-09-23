@@ -13,6 +13,7 @@ from apps.api.models import (
     OverviewCategoryTimeRow,
     OverviewFlaggedRow,
     OverviewImpactRow,
+    OverviewMemoryStats,
     OverviewRecentRow,
     OverviewResponse,
 )
@@ -119,6 +120,18 @@ async def overview(max_entries: int = 8) -> OverviewResponse:
         for name, fmt in res_time
     ]
 
+    # Resolution Memory: real confirmed-outcome numbers, never fabricated.
+    mem = engine.memory.stats()
+    memory_payload = OverviewMemoryStats(
+        total_outcomes=mem["total"],
+        worked=mem["worked"],
+        rejected=mem["rejected"],
+        success_rate=mem["success_rate"],
+        entries_learned=mem["entries_learned"],
+        proven_fixes=engine_analytics.proven_fixes(engine.index.entries),
+        last_outcome_at=mem["last_outcome_at"],
+    )
+
     return OverviewResponse(
         processed=processed,
         added=added,
@@ -130,4 +143,5 @@ async def overview(max_entries: int = 8) -> OverviewResponse:
         recent=recent_payload,
         flagged=flagged_payload,
         resolution_by_category=res_payload,
+        memory_stats=memory_payload,
     )

@@ -1,5 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { Database, CheckCircle, XCircle, Timer, Flag, Clock } from "lucide-react";
+import {
+  Database,
+  CheckCircle,
+  XCircle,
+  Timer,
+  Flag,
+  Clock,
+  Brain,
+} from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { DonutChart } from "@/components/ui/donut-chart";
 import { BarList } from "@/components/ui/bar-list";
@@ -62,6 +70,17 @@ const FLAG_COLUMNS = [
     header: "AI Reasoning",
   },
 ];
+
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return iso;
+  const mins = Math.max(0, Math.round((Date.now() - then) / 60_000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
+}
 
 export default function Overview() {
   const datasetSize = useUIStore((s) => s.datasetSize);
@@ -189,6 +208,84 @@ export default function Overview() {
                 ))}
               </div>
             </div>
+          </div>
+
+          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-card">
+            <div className="mb-3 flex items-center gap-2">
+              <Brain className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-semibold text-gray-900">
+                Resolution Memory
+              </h2>
+              <span className="text-sm text-gray-400">
+                confirmed outcomes feeding the learning loop
+              </span>
+            </div>
+            {data.memory_stats && data.memory_stats.total_outcomes > 0 ? (
+              <>
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
+                  <DonutChart
+                    data={[
+                      {
+                        label: "Worked",
+                        value: data.memory_stats.worked,
+                        color: "#0E9354",
+                      },
+                      {
+                        label: "Rejected",
+                        value: data.memory_stats.rejected,
+                        color: "#E5484D",
+                      },
+                    ]}
+                    total={data.memory_stats.total_outcomes}
+                  />
+                  <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-4">
+                    <div>
+                      <div className="text-3xl font-bold text-gray-900">
+                        {data.memory_stats.total_outcomes}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Outcomes recorded
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-green-600">
+                        {Math.round(data.memory_stats.success_rate * 100)}%
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Outcome success rate
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-gray-900">
+                        {data.memory_stats.entries_learned}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Entries learned
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-blue-600">
+                        {data.memory_stats.proven_fixes}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Proven fixes
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {data.memory_stats.last_outcome_at && (
+                  <div className="mt-3 text-sm text-gray-500">
+                    Last outcome:{" "}
+                    {relativeTime(data.memory_stats.last_outcome_at)}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-base text-gray-500">
+                No outcomes recorded yet — confirm a fix from Find a Solution
+                to start the learning loop.
+              </p>
+            )}
           </div>
 
           <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-card">

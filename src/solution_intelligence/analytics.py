@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 
 from solution_intelligence.models import KnowledgeEntry
+from solution_intelligence.policy import PROVEN_MIN_ATTEMPTS
 
 
 def top_categories(entries: list[KnowledgeEntry], n: int = 6) -> list[tuple[str, int]]:
@@ -24,6 +25,20 @@ def average_success_rate(entries: list[KnowledgeEntry]) -> float:
     if not rated:
         return 0.0
     return round(sum(e.success_rate for e in rated) / len(rated), 3)
+
+
+def proven_fixes(entries: list[KnowledgeEntry]) -> int:
+    """Count entries with a proven track record.
+
+    An entry is proven when it has been attempted at least
+    ``PROVEN_MIN_ATTEMPTS`` times and has never failed — the same bar the
+    abstain policy uses to trust a weak-confidence match.
+    """
+    return sum(
+        1
+        for e in entries
+        if e.attempted >= PROVEN_MIN_ATTEMPTS and e.worked >= e.attempted
+    )
 
 
 def total_solutions(entries: list[KnowledgeEntry]) -> int:
