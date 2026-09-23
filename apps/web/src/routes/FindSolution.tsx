@@ -173,8 +173,12 @@ export default function FindSolution() {
           </div>
         )}
 
-        {results.map((r) => {
-          const pct = Math.round(r.score * 100);
+        {results.map((r, index) => {
+          const rank = index + 1;
+          const worked = r.worked ?? 0;
+          const attempted = r.attempted ?? 0;
+          const hasTrackRecord = attempted > 0;
+          const proven = hasTrackRecord && worked === attempted;
           const isExpanded = expandedIds.has(r.id);
           const toggleExpand = () =>
             setExpandedIds((prev) => {
@@ -190,10 +194,10 @@ export default function FindSolution() {
             >
               <div className="flex items-start gap-3">
                 <span
-                  className="rounded-full bg-green-600 px-3 py-1 text-sm font-bold text-white"
-                  title="Outcome-aware score (similarity + context + history)"
+                  className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white"
+                  title="Ranked match (1 = strongest). Not a probability of success."
                 >
-                  {pct}%
+                  {rank === 1 ? "Best match" : `#${rank}`}
                 </span>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -203,7 +207,18 @@ export default function FindSolution() {
                     <LanguageBadge language={r.language} />
                   </div>
                   <p className="text-base text-gray-500 mt-0.5">{r.description}</p>
-                  <p className="mt-2 text-sm text-gray-500">
+                  {hasTrackRecord ? (
+                    <p className="mt-2 text-sm text-gray-600">
+                      {proven
+                        ? `Proven fix — worked ${worked} of ${attempted} times`
+                        : `Prior success: ${worked} of ${attempted} times`}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-500">
+                      No track record yet — context match only.
+                    </p>
+                  )}
+                  <p className="mt-1 text-sm text-gray-500">
                     Source: {r.source} · {r.date} · Category: {r.category}
                   </p>
                   {isExpanded && <SolutionDetails solution={r} />}

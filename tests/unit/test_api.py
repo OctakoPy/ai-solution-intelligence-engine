@@ -202,18 +202,19 @@ async def test_search_evidence_includes_duplicate_group_peers(
 
 @pytest.mark.anyio
 async def test_search_vague_query_returns_next_best_action(client: AsyncClient) -> None:
-    """Below the shared abstain threshold, search returns guidance, not a fix."""
+    """A weak unproven match escalates; a weak proven match proceeds."""
     await client.post("/api/ingest", json={"max_entries": 12})
+
+    # VPN drops: top hit is unproven (worked 11 of 13) and weak → escalate.
     resp = await client.post(
         "/api/search",
         json={
-            "query": "the custom abap program zreport99 keeps erroring",
+            "query": "VPN drops after 5 minutes, reconnect fails on Windows 11",
             "top_k": 5,
         },
     )
     assert resp.status_code == 200
-    body = resp.json()
-    nba = body["next_best_action"]
+    nba = resp.json()["next_best_action"]
     assert nba is not None
     assert nba["action"] in ("ask_context", "escalate_sme")
     assert nba["message"]
@@ -222,6 +223,17 @@ async def test_search_vague_query_returns_next_best_action(client: AsyncClient) 
     else:
         assert nba["nearest_record_id"]
         assert nba["nearest_record_title"]
+
+    # zreport99: top hit TIC-1001 has worked 8/8 — proven, so proceed even at 41%.
+    resp = await client.post(
+        "/api/search",
+        json={
+            "query": "the custom abap program zreport99 keeps erroring",
+            "top_k": 5,
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()["next_best_action"] is None
 
 
 @pytest.mark.anyio
@@ -341,8 +353,16 @@ async def test_policy_matches_displayed_score_on_both_surfaces(
 
     Find displays confidence directly; Chat boosts similarity. On each
     surface, a top hit below the abstain band must carry a next-best
-    action, and one at or above the confident band must not.
+    action, and one at or above the confident band must not. Proven
+    records are the exception: when the history is perfect, the
+    percentage alone is misleading, so guidance is to proceed.
     """
+
+    def _is_proven(top: dict) -> bool:
+        worked = top.get("worked", 0)
+        attempted = top.get("attempted", 0)
+        return attempted >= 3 and worked >= attempted
+
     await client.post("/api/ingest", json={"max_entries": 0})
 
     for query in (
@@ -356,7 +376,9 @@ async def test_policy_matches_displayed_score_on_both_surfaces(
         ).json()
         top = find["results"][0]
         displayed = top["score"]  # find displays confidence as score
-        if displayed < 0.75:
+        if _is_proven(top) and displayed < 0.90:
+            assert find["next_best_action"] is None, query
+        elif displayed < 0.75:
             assert find["next_best_action"] is not None, query
         elif displayed >= 0.90:
             assert find["next_best_action"] is None, query
@@ -370,7 +392,9 @@ async def test_policy_matches_displayed_score_on_both_surfaces(
         ).json()
         ctop = chat["candidates"][0]
         cdisplayed = ctop["score"]  # chat displays the boosted score
-        if cdisplayed < 0.75:
+        if _is_proven(ctop) and cdisplayed < 0.90:
+            assert chat["next_best_action"] is None, query
+        elif cdisplayed < 0.75:
             assert chat["next_best_action"] is not None, query
         elif cdisplayed >= 0.90:
             assert chat["next_best_action"] is None, query
@@ -463,7 +487,9 @@ async def test_chat_respond(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
-async def test_chat_low_confidence_escalates(client: AsyncClient) -> None:
+async def test_chat_proven_weak_match_proceeds(client: AsyncClient) -> None:
+    """A weak top hit with a perfect track record proceeds — the engine
+    trusts the history over the low score."""
     await client.post("/api/ingest", json={"max_entries": 12})
     resp = await client.post(
         "/api/chat/start",
@@ -474,9 +500,66 @@ async def test_chat_low_confidence_escalates(client: AsyncClient) -> None:
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert any(
-        "confident match" in t["text"] or "escalate" in t["text"] for t in body["turns"]
+    top = body["candidates"][0]
+    assert top["worked"] >= top["attempted"] and top["attempted"] >= 3
+    # No "escalate" wording anywhere in the reply — it offers the fix instead.
+    assert not any(
+        "escalate" in t["text"].lower() for t in body["turns"]
     )
+    # And one turn offers the proven fix directly.
+    assert any(
+        "usually caused by" in t["text"] or "resolved it" in t["text"]
+        for t in body["turns"]
+    )
+
+
+@pytest.mark.anyio
+async def test_chat_proven_below_floor_escalates(client: AsyncClient) -> None:
+    """Even a proven record at 29% similarity is too weak to
+    trust — the banner still appears."""
+    await client.post("/api/ingest", json={"max_entries": 50})
+    resp = await client.post(
+        "/api/chat/start",
+        json={"query": "i ran out of milk in my house", "session_id": "milk"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    top = body["candidates"][0]
+    assert top["worked"] >= top["attempted"] and top["attempted"] >= 3
+    assert top["confidence"] < 0.35
+    assert any("escalate" in t["text"].lower() for t in body["turns"])
+
+
+@pytest.mark.anyio
+async def test_search_proven_below_floor_escalates(client: AsyncClient) -> None:
+    """Same story on the Find a Solution surface."""
+    await client.post("/api/ingest", json={"max_entries": 50})
+    resp = await client.post(
+        "/api/search",
+        json={"query": "i ran out of milk in my house", "top_k": 5},
+    )
+    assert resp.status_code == 200
+    nba = resp.json()["next_best_action"]
+    assert nba is not None
+    assert nba["action"] == "escalate_sme"
+
+
+@pytest.mark.anyio
+async def test_search_supermarket_proven_below_floor_escalates(client: AsyncClient) -> None:
+    """Another weak query — even a 6/6 proven record at 33%
+    is not enough — the banner still appears."""
+    await client.post("/api/ingest", json={"max_entries": 50})
+    resp = await client.post(
+        "/api/search",
+        json={"query": "where is the supermarket", "top_k": 5},
+    )
+    assert resp.status_code == 200
+    top = resp.json()["results"][0]
+    assert top["worked"] >= top["attempted"] and top["attempted"] >= 3
+    assert top["confidence"] < 0.35
+    nba = resp.json()["next_best_action"]
+    assert nba is not None
+    assert nba["action"] == "escalate_sme"
 
 
 @pytest.mark.anyio
