@@ -15,11 +15,11 @@ export function Topbar() {
   const controlsDisabled = status === "playing";
 
   const titles: Record<string, string> = {
-    overview: "Solution Intelligence Engine",
-    pipeline: "Solution Intelligence Engine",
-    find: "Solution Intelligence Engine",
-    chat: "Chat with Intelligence Engine",
-    analytics: "Solution Intelligence Engine",
+    overview: "ResolveIQ",
+    pipeline: "ResolveIQ",
+    find: "ResolveIQ",
+    chat: "Chat with ResolveIQ",
+    analytics: "ResolveIQ",
   };
   const subtitles: Record<string, string> = {
     overview: "Ingest. Understand. Retrieve. Respond.",

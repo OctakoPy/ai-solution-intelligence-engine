@@ -87,7 +87,7 @@ export default function Chat() {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
       <div className="flex flex-col gap-3 lg:col-span-3">
         <PageHeader
-          title="Chat with Intelligence Engine"
+          title="Chat with ResolveIQ"
           subtitle="Ask questions in natural language. Get answers with sourced solutions."
         />
 

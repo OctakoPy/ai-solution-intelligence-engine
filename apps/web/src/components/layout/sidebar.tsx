@@ -37,7 +37,7 @@ export function Sidebar() {
           🧠
         </div>
         <span className="text-xs font-bold uppercase tracking-wider leading-tight">
-          Solution Intelligence Engine
+          ResolveIQ
         </span>
       </div>
       <nav className="flex flex-col gap-1">
