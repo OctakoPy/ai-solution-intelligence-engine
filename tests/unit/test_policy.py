@@ -11,9 +11,12 @@ from solution_intelligence.models import KnowledgeEntry, RetrievedSolution
 from solution_intelligence.policy import (
     ABSTAIN_THRESHOLD,
     CONFIDENT_THRESHOLD,
+    PROVEN_FLOOR,
+    PROVEN_MIN_ATTEMPTS,
     PolicyVerdict,
     decide,
     is_context_trap,
+    is_proven,
     mismatched_signals,
 )
 from solution_intelligence.retrieval import IncidentContext
@@ -77,7 +80,11 @@ def test_ask_context_with_complete_context_does_not_re_ask():
 
 
 def test_decide_escalates_below_abstain_threshold():
-    verdict = decide(make_hit(confidence=0.50))
+    """An unproven weak match still escalates (control case)."""
+    hit = make_hit(confidence=0.50)
+    hit.entry.worked_count = (0, 3)  # attempted 3, never worked
+    assert is_proven(hit) is False
+    verdict = decide(hit)
     assert verdict.action == "escalate_sme"
     nba = verdict.next_best_action
     assert nba is not None
@@ -85,6 +92,44 @@ def test_decide_escalates_below_abstain_threshold():
     assert nba["nearest_record"] == {"id": "T", "title": "vpn drops"}
     assert "50%" in nba["message"]
 
+
+def test_decide_proven_record_bypasses_abstain():
+    """A proven fix is a go once the confidence is above the floor."""
+    hit = make_hit(confidence=0.51)
+    hit.entry.worked_count = (8, 8)  # proven fix
+    assert is_proven(hit) is True
+    assert hit.confidence >= PROVEN_FLOOR
+    verdict = decide(hit)
+    assert verdict.action == "proceed"
+    assert verdict.next_best_action is None
+
+
+def test_decide_proven_record_below_floor_escalates():
+    """Even a perfect track record is not enough at very low similarity —
+    the banner still appears because the query likely isn't about this record."""
+    hit = make_hit(confidence=0.29)
+    hit.entry.worked_count = (45, 45)  # perfect track record
+    assert is_proven(hit) is True
+    assert hit.confidence < PROVEN_FLOOR
+    verdict = decide(hit)
+    assert verdict.action == "escalate_sme"
+
+def test_decide_unproven_record_at_low_confidence_escalates():
+    """Unproven weak match still escalates (explicit control)."""
+    hit = make_hit(confidence=0.41)
+    hit.entry.worked_count = (0, 3)  # attempted 3, never worked
+    assert is_proven(hit) is False
+    verdict = decide(hit)
+    assert verdict.action == "escalate_sme"
+
+def test_decide_under_min_attempts_is_not_proven():
+    """A perfect record with too few attempts isn't trusted yet."""
+    hit = make_hit(confidence=0.51)
+    hit.entry.worked_count = (2, 2)  # perfect but only 2 attempts
+    assert hit.entry.attempted < PROVEN_MIN_ATTEMPTS
+    assert is_proven(hit) is False
+    verdict = decide(hit)
+    assert verdict.action == "escalate_sme"
 
 def test_decide_with_no_hits_escalates_without_nearest():
     verdict = decide(None)
