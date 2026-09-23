@@ -54,6 +54,7 @@ nav:
   - Tutorials:
       - Overview: tutorials/index.md
       - Demo Script: tutorials/demo-script.md
+      - Verification Script: tutorials/verification-script.md
   - How-To:
       - Overview: how-to/index.md
   - Reference: reference/index.md
@@ -64,6 +65,7 @@ nav:
       - ADRs: architecture/adr/index.md
       - ADR-001 (ADRs): architecture/adr/001-use-architectural-decision-records.md
       - ADR-002 (uv): architecture/adr/002-manage-dependencies-with-uv.md
+      - ADR-003 (abstain policy): architecture/adr/003-shared-abstain-policy.md
   - Tags: tags.md
 
 extra_javascript:

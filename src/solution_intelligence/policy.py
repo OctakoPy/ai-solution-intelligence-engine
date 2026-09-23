@@ -94,15 +94,23 @@ def _ask_context_payload(
         missing.append("module")
     if context is None or not (context.environment or "").strip():
         missing.append("environment")
-    if not missing:
-        missing = ["error_code", "module", "environment"]
-    fields = ", ".join(m.replace("_", " ") for m in missing)
-    return {
-        "action": "ask_context",
-        "message": (
+    if missing:
+        fields = ", ".join(m.replace("_", " ") for m in missing)
+        message = (
             "Not confident enough to recommend a fix. Confirm the "
             f"{fields} of the incident, then search again."
-        ),
+        )
+    else:
+        # Context is complete yet confidence is still mid-band: do not ask
+        # again for fields the user already supplied.
+        message = (
+            "Not confident enough to recommend a fix, even with the full "
+            "incident context. Review the nearest matches with a "
+            "specialist before applying anything."
+        )
+    return {
+        "action": "ask_context",
+        "message": message,
         "missing_fields": missing,
     }
 
@@ -112,7 +120,7 @@ def _escalate_payload(top: RetrievedSolution | None) -> dict[str, Any]:
     nearest: dict[str, str] | None = None
     if top is not None:
         nearest = {"id": top.entry.id, "title": top.entry.title}
-        best = int(top.confidence * 100)
+        best = round(top.confidence * 100)
         message = (
             "No historical record is a confident match (best: "
             f"{best}%). Escalate to a subject-matter expert instead of "

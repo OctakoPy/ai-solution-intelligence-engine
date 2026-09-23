@@ -63,6 +63,19 @@ def test_decide_asks_for_context_in_middle_band():
     assert "module, environment" in nba["message"]
 
 
+def test_ask_context_with_complete_context_does_not_re_ask():
+    """Full context supplied but still mid-band: no re-asking for fields."""
+    verdict = decide(
+        make_hit(confidence=0.80),
+        context=IncidentContext(error_code="E1", module="SAP MM", environment="PROD"),
+    )
+    assert verdict.action == "ask_context"
+    nba = verdict.next_best_action
+    assert nba is not None
+    assert nba["missing_fields"] == []
+    assert "specialist" in nba["message"]
+
+
 def test_decide_escalates_below_abstain_threshold():
     verdict = decide(make_hit(confidence=0.50))
     assert verdict.action == "escalate_sme"
