@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 export default test.describe.parallel("Navigation smoke", () => {
   test("sidebar navigates between the four routes", async ({ page }) => {
     await page.goto("http://localhost:5179/overview");
-    await expect(page).toHaveTitle(/Solution Intelligence Engine/);
+    await expect(page).toHaveTitle(/ResolveIQ/);
     const main = page.getByRole("main");
 
     await page.getByRole("button", { name: "Ingestion Pipeline" }).click();
@@ -17,7 +17,7 @@ export default test.describe.parallel("Navigation smoke", () => {
     await page.getByRole("button", { name: "Chat with the Engine" }).click();
     await expect(page).toHaveURL(/\/chat/);
     await expect(
-      main.getByRole("heading", { name: "Chat with Intelligence Engine" }),
+      main.getByRole("heading", { name: "Chat with ResolveIQ" }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Overview" }).click();
