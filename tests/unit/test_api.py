@@ -644,8 +644,41 @@ async def test_analytics_overview(client: AsyncClient) -> None:
         "recent",
         "flagged",
         "resolution_by_category",
+        "memory_stats",
     ):
         assert key in body
+
+
+@pytest.mark.anyio
+async def test_analytics_overview_memory_stats(client: AsyncClient) -> None:
+    """Overview carries live Resolution Memory learning stats."""
+    await client.post("/api/ingest", json={"max_entries": 3})
+    # No outcomes yet: honest zeros, not fabricated numbers.
+    resp = await client.get("/api/analytics/overview?max_entries=3")
+    assert resp.status_code == 200
+    stats = resp.json()["memory_stats"]
+    assert stats["total_outcomes"] == 0
+    assert stats["worked"] == 0
+    assert stats["entries_learned"] == 0
+    assert stats["last_outcome_at"] is None
+
+    engine = get_or_build_engine(0)
+    entry_id = engine.index.entries[0].id
+    posted = await client.post(
+        "/api/outcomes", json={"entry_id": entry_id, "success": True}
+    )
+    assert posted.status_code == 200
+
+    resp = await client.get("/api/analytics/overview?max_entries=3")
+    assert resp.status_code == 200
+    stats = resp.json()["memory_stats"]
+    assert stats["total_outcomes"] == 1
+    assert stats["worked"] == 1
+    assert stats["rejected"] == 0
+    assert stats["success_rate"] == 1.0
+    assert stats["entries_learned"] == 1
+    assert stats["last_outcome_at"]
+    assert isinstance(stats["proven_fixes"], int)
 
 
 @pytest.mark.anyio
