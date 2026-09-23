@@ -11,6 +11,7 @@ from apps.api.models import (
     SearchRequest,
     SearchResponse,
 )
+from apps.api.policy import evaluate_policy, to_next_best_action
 from apps.api.views import SOURCE_LABELS
 from apps.api.why import attach_why
 from solution_intelligence.retrieval import IncidentContext as CoreContext
@@ -53,8 +54,12 @@ async def search(req: SearchRequest) -> SearchResponse:
             english_description=h.entry.english_description,
             english_resolution=h.entry.english_resolution,
             signals=matched_signals(h.entry, context),
-            **attach_why(h, all_entries),
+            **attach_why(h, all_entries, context=context),
         )
         for h in hits
     ]
-    return SearchResponse(results=payload)
+    verdict = evaluate_policy(hits, context)
+    return SearchResponse(
+        results=payload,
+        next_best_action=to_next_best_action(verdict),
+    )

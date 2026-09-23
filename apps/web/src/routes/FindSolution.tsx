@@ -4,8 +4,9 @@ import { Search as SearchIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/ui/page-header";
+import { NextBestActionBanner } from "@/components/ui/next-best-action-banner";
 import { search } from "@/lib/api";
-import type { RetrievedSolution, SearchContext } from "@/lib/types";
+import type { NextBestAction, RetrievedSolution, SearchContext } from "@/lib/types";
 import { LanguageBadge } from "@/components/ui/language-badge";
 import { OutcomeFeedback } from "@/components/ui/outcome-feedback";
 import { SignalBadge } from "@/components/ui/signal-badge";
@@ -24,6 +25,7 @@ export default function FindSolution() {
   const [showIncident, setShowIncident] = useState(false);
   const [activeContext, setActiveContext] = useState<SearchContext | null>(null);
   const [results, setResults] = useState<RetrievedSolution[]>([]);
+  const [nextAction, setNextAction] = useState<NextBestAction | null>(null);
   const [searched, setSearched] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
@@ -33,6 +35,7 @@ export default function FindSolution() {
       search({ query, top_k: 5, context }),
     onSuccess: (res) => {
       setResults(res.results);
+      setNextAction(res.next_best_action ?? null);
       setSearched(true);
     },
   });
@@ -150,6 +153,8 @@ export default function FindSolution() {
       )}
 
       <h2 className="mt-6 text-xl font-semibold text-gray-900">Top Matches</h2>
+
+      {nextAction && <NextBestActionBanner action={nextAction} className="mt-3" />}
 
       <div className="mt-3 space-y-3">
         {searchMut.isPending && (
