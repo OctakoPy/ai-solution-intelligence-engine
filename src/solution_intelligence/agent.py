@@ -15,6 +15,7 @@ from solution_intelligence.retrieval import (
     ConfidenceScorer,
     IncidentContext,
     KnowledgeIndex,
+    rank_results,
 )
 
 
@@ -83,9 +84,17 @@ class ConversationalAgent:
         query: str,
         context: IncidentContext | None = None,
     ) -> ChatSession:
-        """Create a session and return the initial candidate list."""
-        candidates = self.index.query(query, top_k=5)
-        candidates = _score_candidates(self.scorer, candidates, context)
+        """Create a session and return the initial candidate list.
+
+        Uses the same shared outcome-aware ranking path as Find a Solution,
+        so identical query + context rank identically on both surfaces.
+        """
+        candidates = rank_results(
+            index=self.index,
+            query=query,
+            top_k=5,
+            context=context,
+        )
         session = ChatSession(query=query, context=context)
         session.add_user(query, candidates)
         self.sessions[session_id] = session
@@ -111,29 +120,21 @@ class ConversationalAgent:
         intent = detect_intent(message)
         boost_terms = _extract_boost_terms(message)
 
-        if intent in ("broaden", "more"):
-            candidates = self.index.query(f"{session.query} {message}", top_k=top_k)
-        else:
-            candidates = self.index.query(session.query, top_k=top_k)
-
-        candidates = _score_candidates(self.scorer, candidates, session.context)
-
-        if boost_terms:
-            candidates = _apply_boosts(candidates, boost_terms)
+        effective_query = (
+            f"{session.query} {message}"
+            if intent in ("broaden", "more")
+            else session.query
+        )
+        candidates = rank_results(
+            index=self.index,
+            query=effective_query,
+            top_k=top_k,
+            context=session.context,
+            adjust=lambda c: _apply_boosts(c, boost_terms),
+        )
 
         session.add_user(message, candidates)
         return session
-
-
-def _score_candidates(
-    scorer: ConfidenceScorer,
-    candidates: list[RetrievedSolution],
-    context: IncidentContext | None,
-) -> list[RetrievedSolution]:
-    """Attach outcome-aware confidence to each candidate."""
-    for candidate in candidates:
-        candidate.confidence = scorer.score(candidate.entry, candidate.score, context)
-    return candidates
 
 
 def _extract_boost_terms(message: str) -> list[str]:
@@ -162,13 +163,15 @@ def _extract_boost_terms(message: str) -> list[str]:
 
 
 def _apply_boosts(
-    candidates: list[RetrievedSolution],
+    candidate: RetrievedSolution,
     terms: list[str],
-) -> list[RetrievedSolution]:
-    """Re-rank candidates that match refinement terms higher."""
-    for candidate in candidates:
-        haystack = f"{candidate.entry.title} {candidate.entry.description}".lower()
-        matches = sum(1 for t in terms if t in haystack)
-        candidate.score = round(min(1.0, candidate.score + 0.05 * matches), 3)
-    candidates.sort(key=lambda c: c.combined_score, reverse=True)
-    return candidates
+) -> None:
+    """Nudge a candidate's raw similarity up for each refinement-term match.
+
+    Runs inside the shared ranking path's ``adjust`` hook, before the
+    outcome-aware confidence is recomputed, so conversational refinements
+    shift the same ranking scale instead of introducing a second one.
+    """
+    haystack = f"{candidate.entry.title} {candidate.entry.description}".lower()
+    matches = sum(1 for t in terms if t in haystack)
+    candidate.score = round(min(1.0, candidate.score + 0.05 * matches), 3)
