@@ -114,6 +114,37 @@ def test_malformed_log_raises(tmp_path):
         ResolutionMemory(path=log)
 
 
+# --- Dashboard stats ----------------------------------------------------------
+
+
+def test_stats_empty_memory_reports_honest_zeros():
+    """An untouched memory reports zeros, never fabricated numbers."""
+    stats = ResolutionMemory(path=None).stats()
+    assert stats == {
+        "total": 0,
+        "worked": 0,
+        "rejected": 0,
+        "success_rate": 0.0,
+        "entries_learned": 0,
+        "last_outcome_at": None,
+    }
+
+
+def test_stats_aggregates_confirmed_outcomes():
+    memory = ResolutionMemory(path=None)
+    memory.record("A", True, source="test")
+    memory.record("A", True, source="test")
+    memory.record("A", False, source="test")
+    memory.record("B", False, source="test")
+    stats = memory.stats()
+    assert stats["total"] == 4
+    assert stats["worked"] == 2
+    assert stats["rejected"] == 2
+    assert stats["success_rate"] == 0.5
+    assert stats["entries_learned"] == 2
+    assert stats["last_outcome_at"]  # set at record time
+
+
 # --- Engine integration: the learning loop ------------------------------------
 
 

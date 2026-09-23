@@ -144,6 +144,27 @@ class ResolutionMemory:
             )
         return deltas
 
+    def stats(self) -> dict[str, Any]:
+        """Aggregate confirmed-outcome stats for the dashboard.
+
+        Returns:
+            A mapping with ``total``, ``worked``, ``rejected``,
+            ``success_rate`` (0..1), ``entries_learned`` (distinct entry
+            ids with at least one outcome), and ``last_outcome_at`` (ISO
+            timestamp of the newest record, or ``None`` when empty).
+        """
+        total = len(self._records)
+        worked = sum(1 for record in self._records if record.success)
+        rejected = total - worked
+        return {
+            "total": total,
+            "worked": worked,
+            "rejected": rejected,
+            "success_rate": round(worked / total, 3) if total else 0.0,
+            "entries_learned": len({record.entry_id for record in self._records}),
+            "last_outcome_at": self._records[-1].timestamp if total else None,
+        }
+
     def apply(self, entries: Iterable[KnowledgeEntry]) -> int:
         """Fold past outcomes into the given entries' ``worked_count``.
 

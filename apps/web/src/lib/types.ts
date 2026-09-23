@@ -135,6 +135,16 @@ export interface OverviewCategoryTimeRow {
   avg_time: string;
 }
 
+export interface OverviewMemoryStats {
+  total_outcomes: number;
+  worked: number;
+  rejected: number;
+  success_rate: number;
+  entries_learned: number;
+  proven_fixes: number;
+  last_outcome_at: string | null;
+}
+
 export interface OverviewResponse {
   processed: number;
   added: number;
@@ -146,6 +156,7 @@ export interface OverviewResponse {
   recent: OverviewRecentRow[];
   flagged: OverviewFlaggedRow[];
   resolution_by_category: OverviewCategoryTimeRow[];
+  memory_stats: OverviewMemoryStats | null;
 }
 
 export interface IngestResponse {
