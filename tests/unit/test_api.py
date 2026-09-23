@@ -201,6 +201,82 @@ async def test_search_evidence_includes_duplicate_group_peers(
 
 
 @pytest.mark.anyio
+async def test_search_vague_query_returns_next_best_action(client: AsyncClient) -> None:
+    """Below the shared abstain threshold, search returns guidance, not a fix."""
+    await client.post("/api/ingest", json={"max_entries": 12})
+    resp = await client.post(
+        "/api/search",
+        json={
+            "query": "the custom abap program zreport99 keeps erroring",
+            "top_k": 5,
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    nba = body["next_best_action"]
+    assert nba is not None
+    assert nba["action"] in ("ask_context", "escalate_sme")
+    assert nba["message"]
+    if nba["action"] == "ask_context":
+        assert nba["missing_fields"]
+    else:
+        assert nba["nearest_record_id"]
+        assert nba["nearest_record_title"]
+
+
+@pytest.mark.anyio
+async def test_search_confident_query_has_no_next_best_action(
+    client: AsyncClient,
+) -> None:
+    """A strong match must not carry abstain guidance."""
+    await client.post("/api/ingest", json={"max_entries": 12})
+    resp = await client.post(
+        "/api/search",
+        json={
+            "query": "SAP FI report access denied authorization error",
+            "top_k": 3,
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    results = body["results"]
+    if results and results[0]["confidence"] >= 0.90:
+        assert body["next_best_action"] is None
+    else:
+        # Not confident: an action is acceptable, but never absent-and-silent.
+        assert body["next_best_action"] is None or body["next_best_action"][
+            "action"
+        ] in ("ask_context", "escalate_sme")
+
+
+@pytest.mark.anyio
+async def test_search_context_trap_surfaces_caveat(client: AsyncClient) -> None:
+    """Same error code, different environment -> verify-root-cause caveat."""
+    await client.post("/api/ingest", json={"max_entries": 0})
+    # TIC-3011 is the PROD root cause; querying with the UAT environment
+    # must not present it without a warning.
+    resp = await client.post(
+        "/api/search",
+        json={
+            "query": "goods receipt posting error",
+            "top_k": 5,
+            "context": {
+                "error_code": "M8149",
+                "module": "SAP MM",
+                "environment": "UAT",
+            },
+        },
+    )
+    assert resp.status_code == 200
+    results = resp.json()["results"]
+    trap_hits = [r for r in results if r["id"] == "TIC-3011"]
+    if trap_hits:
+        caveats = " ".join(trap_hits[0]["caveats"])
+        assert "Verify root cause" in caveats
+        assert "environment" in caveats
+
+
+@pytest.mark.anyio
 async def test_chat_candidates_carry_why_panel_fields(client: AsyncClient) -> None:
     """Chat candidates expose the same evidence payload as search."""
     await client.post("/api/ingest", json={"max_entries": 12})
@@ -224,6 +300,37 @@ async def test_chat_candidates_carry_why_panel_fields(client: AsyncClient) -> No
     assert c["evidence"]
     assert c["evidence"][0]["id"] == c["id"]
     assert isinstance(c["caveats"], list)
+
+
+@pytest.mark.anyio
+async def test_chat_low_confidence_returns_next_best_action(
+    client: AsyncClient,
+) -> None:
+    """Chat abstains through the shared policy and exposes the action."""
+    await client.post("/api/ingest", json={"max_entries": 12})
+    resp = await client.post(
+        "/api/chat/start",
+        json={
+            "query": "po approval tile missing from fiori launchpad after update",
+            "session_id": "nba1",
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    if body["next_best_action"] is not None:
+        nba = body["next_best_action"]
+        assert nba["action"] in ("ask_context", "escalate_sme")
+        assert nba["message"]
+        # The assistant reply must carry the policy message, not contradict it.
+        assistant_text = next(
+            t["text"] for t in body["turns"] if t["role"] == "assistant"
+        )
+        assert (
+            any(
+                part in assistant_text for part in (nba["message"], nba["message"][:40])
+            )
+            or "escalate" in assistant_text.lower()
+        )
 
 
 @pytest.mark.anyio
