@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/
@@ -161,6 +161,7 @@ dist/
 # Playwright
 test-results/
 playwright-report/
+demo-video/
 
 # mypy
 .mypy_cache/

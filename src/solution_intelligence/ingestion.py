@@ -350,6 +350,32 @@ class IngestionPipeline:
                     run.rejected.append(entry)
                     continue
                 if dup.tier == "near_duplicate":
+                    # A translation of an already-indexed record reads as a
+                    # near duplicate - the Chinese FI-report ticket really is
+                    # the same problem as the English one - but dropping it
+                    # would delete the only Chinese copy from the knowledge
+                    # base, and the multilingual retrieval would then have
+                    # nothing to show. Same subject, different language is a
+                    # translation, not a duplicate, so it is indexed and
+                    # linked rather than withheld.
+                    best = next((e for e in indexed if e.id == dup.best_match_id), None)
+                    is_translation = best is not None and (
+                        (entry.language or "en") != (best.language or "en")
+                    )
+                    if is_translation:
+                        self._visualise(
+                            run,
+                            entry,
+                            "duplicate",
+                            f"Translation of '{dup.best_match_title}' "
+                            f"({dup.best_score:.0%}) - indexed as a "
+                            f"{entry.language} version",
+                            StageResult.PASS,
+                            score=dup.best_score,
+                        )
+                        run.ingested.append(entry)
+                        indexed.append(entry)
+                        continue
                     self._visualise(
                         run,
                         entry,

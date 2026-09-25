@@ -6,11 +6,12 @@ import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/ui/page-header";
 import { NextBestActionBanner } from "@/components/ui/next-best-action-banner";
 import { search } from "@/lib/api";
-import type { NextBestAction, RetrievedSolution, SearchContext } from "@/lib/types";
+import type { NextBestAction, RetrievedSolution, SearchContext, Signal } from "@/lib/types";
 import { LanguageBadge } from "@/components/ui/language-badge";
 import { OutcomeFeedback } from "@/components/ui/outcome-feedback";
 import { SignalBadge } from "@/components/ui/signal-badge";
 import { SolutionDetails } from "@/components/ui/solution-details";
+import { confidenceSummary } from "@/components/ui/why-panel";
 
 interface SearchMutationArgs {
   query: string;
@@ -31,8 +32,7 @@ export default function FindSolution() {
   const navigate = useNavigate();
 
   const searchMut = useMutation({
-    mutationFn: ({ query, context }: SearchMutationArgs) =>
-      search({ query, top_k: 5, context }),
+    mutationFn: ({ query, context }: SearchMutationArgs) => search({ query, top_k: 5, context }),
     onSuccess: (res) => {
       setResults(res.results);
       setNextAction(res.next_best_action ?? null);
@@ -55,7 +55,30 @@ export default function FindSolution() {
     searchMut.mutate({ query: q, context: ctx });
   };
 
+  const suppliedContextSignals: Signal[] = (
+    [
+      ["error_code", activeContext?.error_code],
+      ["module", activeContext?.module],
+      ["environment", activeContext?.environment],
+    ] as const
+  )
+    .filter(([, value]) => !!value)
+    .map(([signal]) => signal);
+
   const contextIsActive = Object.values(activeContext ?? {}).some(Boolean);
+  // A genuine "no match" declines to show candidates at all. Asking for
+  // context is not a decline: the record is on topic and the user needs to
+  // see it to know what to supply.
+  const declined = nextAction?.action === "escalate_sme";
+  const contextMatchedTop = suppliedContextSignals.every((signal) =>
+    results[0]?.signals?.includes(signal),
+  );
+  // The user already told us the error code, module, and environment, and the
+  // top record agrees on every one of them. Asking for more context here would
+  // be asking for something they have already supplied.
+  const askContextSatisfied =
+    nextAction?.action === "ask_context" && suppliedContextSignals.length > 0 && contextMatchedTop;
+  const showBanner = nextAction !== null && !askContextSatisfied;
 
   return (
     <div>
@@ -138,124 +161,137 @@ export default function FindSolution() {
             </button>
           </div>
           <p className="mt-2 text-xs text-gray-500">
-            Match these details against the knowledge base for an exact
-            recommendation. Leave blank to search by text only.
+            Match these details against the knowledge base for an exact recommendation. Leave blank
+            to search by text only.
           </p>
         </div>
       )}
 
       {contextIsActive && (
         <p className="mt-2 text-sm text-gray-600">
-          Searching with: {activeContext!.error_code && <span className="font-medium">error {activeContext!.error_code} · </span>}
+          Searching with:{" "}
+          {activeContext!.error_code && (
+            <span className="font-medium">error {activeContext!.error_code} · </span>
+          )}
           {activeContext!.module && <span className="font-medium">{activeContext!.module} · </span>}
-          {activeContext!.environment && <span className="font-medium">{activeContext!.environment}</span>}
+          {activeContext!.environment && (
+            <span className="font-medium">{activeContext!.environment}</span>
+          )}
         </p>
       )}
 
-      <h2 className="mt-6 text-xl font-semibold text-gray-900">Top Matches</h2>
+      {/* Only a genuine no-match replaces the results. `ask_context` means
+          the record is right but unconfirmed, and the cards must stay
+          visible: the user supplies the missing detail by looking at them. */}
+      {declined ? (
+        <div className="mt-3 rounded-lg border border-gray-200 bg-white p-4 text-base text-gray-500">
+          No appropriate match found in the available records. Try describing the issue differently,
+          or use Chat to add context and narrow it down.
+        </div>
+      ) : (
+        <h2 className="mt-6 text-xl font-semibold text-gray-900">Top Matches</h2>
+      )}
 
-      {nextAction && <NextBestActionBanner action={nextAction} className="mt-3" />}
+      {showBanner && nextAction && <NextBestActionBanner action={nextAction} className="mt-3" />}
 
       <div className="mt-3 space-y-3">
-        {searchMut.isPending && (
-          <div className="text-base text-gray-500">Searching...</div>
-        )}
+        {searchMut.isPending && <div className="text-base text-gray-500">Searching...</div>}
 
-        {searched && results.length === 0 && (
+        {!declined && searched && results.length === 0 && (
           <div className="rounded-lg border border-gray-200 bg-white p-4 text-base text-gray-500">
             No results.
           </div>
         )}
 
-        {!searched && (
+        {!nextAction && !searched && (
           <div className="rounded-lg border border-gray-200 bg-white p-4 text-base text-gray-500">
             Run a search to see matching solutions.
           </div>
         )}
 
-        {results.map((r, index) => {
-          const rank = index + 1;
-          const worked = r.worked ?? 0;
-          const attempted = r.attempted ?? 0;
-          const hasTrackRecord = attempted > 0;
-          const proven = hasTrackRecord && worked === attempted;
-          const isExpanded = expandedIds.has(r.id);
-          const toggleExpand = () =>
-            setExpandedIds((prev) => {
-              const next = new Set(prev);
-              if (next.has(r.id)) next.delete(r.id);
-              else next.add(r.id);
-              return next;
-            });
-          return (
-            <div
-              key={r.id}
-              className="rounded-xl border border-gray-200 bg-white p-4 shadow-card"
-            >
-              <div className="flex items-start gap-3">
-                <span
-                  className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white"
-                  title="Ranked match (1 = strongest). Not a probability of success."
-                >
-                  {rank === 1 ? "Best match" : `#${rank}`}
-                </span>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {r.title}
-                    </h3>
-                    <LanguageBadge language={r.language} />
+        {!declined &&
+          results.map((r, index) => {
+            const rank = index + 1;
+            const worked = r.worked ?? 0;
+            const attempted = r.attempted ?? 0;
+            const hasTrackRecord = attempted > 0;
+            const proven = hasTrackRecord && worked === attempted;
+            const isExpanded = expandedIds.has(r.id);
+            const toggleExpand = () =>
+              setExpandedIds((prev) => {
+                const next = new Set(prev);
+                if (next.has(r.id)) next.delete(r.id);
+                else next.add(r.id);
+                return next;
+              });
+            return (
+              <div
+                key={r.id}
+                className="rounded-xl border border-gray-200 bg-white p-4 shadow-card"
+              >
+                <div className="flex items-start gap-3">
+                  <span
+                    className="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white"
+                    title="Ranked match (1 = strongest). Not a probability of success."
+                  >
+                    {rank === 1 ? "Best match" : `#${rank}`}
+                  </span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold text-gray-900">{r.title}</h3>
+                      <LanguageBadge language={r.language} />
+                    </div>
+                    <p className="mt-2 text-sm font-medium text-gray-700">{confidenceSummary(r)}</p>
+                    <p className="text-base text-gray-500 mt-0.5">{r.description}</p>
+                    {hasTrackRecord ? (
+                      <p className="mt-2 text-sm text-gray-600">
+                        {proven
+                          ? `Proven fix — worked ${worked} of ${attempted} times`
+                          : `Prior success: ${worked} of ${attempted} times`}
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-sm text-gray-500">
+                        No track record yet — context match only.
+                      </p>
+                    )}
+                    <p className="mt-1 text-sm text-gray-500">
+                      Source: {r.source} · {r.date} · Category: {r.category}
+                    </p>
+                    {isExpanded && <SolutionDetails solution={r} />}
                   </div>
-                  <p className="text-base text-gray-500 mt-0.5">{r.description}</p>
-                  {hasTrackRecord ? (
-                    <p className="mt-2 text-sm text-gray-600">
-                      {proven
-                        ? `Proven fix — worked ${worked} of ${attempted} times`
-                        : `Prior success: ${worked} of ${attempted} times`}
-                    </p>
-                  ) : (
-                    <p className="mt-2 text-sm text-gray-500">
-                      No track record yet — context match only.
-                    </p>
-                  )}
-                  <p className="mt-1 text-sm text-gray-500">
-                    Source: {r.source} · {r.date} · Category: {r.category}
-                  </p>
-                  {isExpanded && <SolutionDetails solution={r} />}
+                  <button
+                    onClick={toggleExpand}
+                    className="rounded-md border border-blue-600 px-3 py-1 text-sm font-semibold text-blue-600 hover:bg-blue-50 flex items-center gap-1"
+                  >
+                    {isExpanded ? (
+                      <>
+                        <ChevronDown className="h-4 w-4 rotate-180 transition-transform" />
+                        Hide Details
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4 transition-transform" />
+                        View Details
+                      </>
+                    )}
+                  </button>
                 </div>
-                <button
-                  onClick={toggleExpand}
-                  className="rounded-md border border-blue-600 px-3 py-1 text-sm font-semibold text-blue-600 hover:bg-blue-50 flex items-center gap-1"
-                >
-                  {isExpanded ? (
-                    <>
-                      <ChevronDown className="h-4 w-4 rotate-180 transition-transform" />
-                      Hide Details
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-4 w-4 transition-transform" />
-                      View Details
-                    </>
-                  )}
-                </button>
-              </div>
-              {r.signals && r.signals.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {r.signals.map((s) => (
-                    <SignalBadge key={s} signal={s} />
-                  ))}
+                {r.signals && r.signals.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {r.signals.map((s) => (
+                      <SignalBadge key={s} signal={s} />
+                    ))}
+                  </div>
+                )}
+                <div className="mt-2 flex items-center justify-between">
+                  <OutcomeFeedback entryId={r.id} />
                 </div>
-              )}
-              <div className="mt-2 flex items-center justify-between">
-                <OutcomeFeedback entryId={r.id} />
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
       </div>
 
-      {searched && results.length > 0 && (
+      {!declined && searched && results.length > 0 && (
         <div className="mt-4 text-base text-gray-500">
           Can't find what you need?{" "}
           <button
