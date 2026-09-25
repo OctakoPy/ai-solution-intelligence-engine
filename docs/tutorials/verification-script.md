@@ -45,8 +45,8 @@ Open **http://localhost:5179**.
 
 | What to do | What you should see |
 | --- | --- |
-| Read the top result | **TIC-1001** is #1 with a **51%** badge. Lower matches (TIC-1005, SAP-1005, TIC-1004) sit below it. |
-| Click **View Details** on TIC-1001 | The **Prior success** row reads **Worked 8 of 8 times (100%)** — the outcome history that put it on top. |
+| Read the top result | **TIC-1001** is #1. It reads **High confidence — this fix has worked every time it was tried**, with a track record of **worked 8 of 8**. |
+| Click **View Details** on TIC-1001 | The **Why this** panel lists the reasons in plain English. **Show scoring detail** reveals the weighted numbers. |
 
 **Point of this step:** the top of the list is the fix that *worked before*,
 not merely the one with the most similar words — and the number you see is
@@ -84,12 +84,14 @@ behind its score, its track record, and the records that back it up.
 
 | What to do | What you should see |
 | --- | --- |
-| Read the top result | **TIC-1001** at **41%** — but the badge and Prior success show **Worked 8 of 8 times**. |
-| Look **above the results** | **No amber banner.** The engine proceeds with the proven fix rather than escalating a 41% score that matches a record with a perfect track record. |
-| **Switch to Chat** and send the same query | The assistant reply offers the proven fix as a starting point (the chat wording band). The top source card shows a boosted score on chat's display scale. |
+| Read the top result | **TIC-1001** — *User cannot access FI reports in SAP* — carrying a **worked 8 of 8** track record. |
+| Look **above the results** | **No amber banner.** A mediocre wording match against a record that has never failed is still worth offering. |
+| **Switch to Chat** and send the same query | The assistant offers that same record as the best answer, quoting its 8 of 8 history. |
 
-**Point of this step:** a low similarity score can still be the right answer
-— when the record has worked every time it was tried, the engine trusts the history over the percentage. (When the record is genuinely unproven, the mid-band banner still catches it.)
+**Point of this step:** text similarity alone would have dismissed this
+question. The outcome history is what rescues it — which is why the track
+record is shown next to every answer. (When the record is genuinely unproven,
+the banner still catches it.)
 
 ---
 
@@ -102,8 +104,8 @@ error code **M8149**, system **SAP MM**, environment **PROD** → Search
 
 | What to do | What you should see |
 | --- | --- |
-| Read the top result | **TIC-3011** at **84%** — the PROD root cause wins in its own environment. The banner says *Not confident enough to recommend a fix, even with the full incident context…* (mid-band, context already complete). |
-| Change environment **PROD → UAT**, search again | **TIC-3012** — a *different root cause* — takes the top spot at **80%**. |
+| Read the top result | **TIC-3011** ranks first with all three green badges lit — **Error code**, **System / module**, **Environment** — so it is unambiguously the PROD root cause. |
+| Change environment **PROD → UAT**, search again | **TIC-3012** — a *different root cause* — takes the top spot. The badge order flips with it. |
 
 **The trap payoff — expand TIC-3011 (the PROD record) in the UAT result
 list.** In its WHY THIS panel:
@@ -128,9 +130,9 @@ Still on Find a Solution, query from Section 1:
 | What to do | What you should see |
 | --- | --- |
 | On TIC-1001's card, click **No** under *Did this work?* | The badge flips to *Marked failed · engine learned (N outcomes)*. |
-| Search the same query again | TIC-1001 now shows **8/9** in Prior success, and its badge drops **51% → 48%**. |
-| Click **Yes**, search again | Back to **9/9** and the badge recovers toward 51%. |
-| Restart `just dev`, search again | The learned counts persist — outcomes are stored in `data/resolution_memory.json`, applied as recomputed deltas. |
+| Search the same query again | TIC-1001 now shows **8 of 9** in Prior success. |
+| Click **Yes**, search again | It moves to **9 of 10** and the "high confidence" line relaxes accordingly. |
+| Restart the API, search again | The counts return to the seeded **8 of 8** — the demo seed resets on every restart, so a rehearsal never leaves the demo worse than it started. |
 
 **Point of this step:** confirmed outcomes change future ranking — negative
 learning demotes, positive learning recovers. Delete the log file to reset.
@@ -153,11 +155,12 @@ supported language surfaces the right fix in any other.
 
 ## One-minute version (elevator demo)
 
-1. Search the FI authorization query → *proven fix wins, 8/8 worked*.
-2. Expand it → *WHY THIS: score math + track record + caveats*.
-3. Search `zreport99` → *41% but proven 8/8 — engine proceeds, no banner*.
+1. Search the FI authorization query → *the fix that always works, 8 of 8*.
+2. Expand it → *plain-English reasons, track record, caveats*.
+3. Search `zreport99` → *a poor wording match, but the record has never failed — it still answers, no banner*.
 4. Trap: `goods receipt posting error` + M8149 in PROD, then UAT →
    *different root cause wins + "verify root cause" caveat*.
+5. Multilingual: the same FI query returns English + BM + Chinese.
 
 ## Checks the CI runs so you don't have to
 
