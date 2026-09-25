@@ -12,9 +12,6 @@ retrieves proven fixes for new issues — with a transparent, trust-first
 model. Ships with a full Python backend, a React dashboard, and a runnable
 demo dataset.
 
-[![Solution Intelligence Engine Demo](https://img.youtube.com/vi/EL6kNAdEPOY/maxresdefault.jpg)](https://youtu.be/EL6kNAdEPOY)
-(click to watch the demo video!)
-
 ![Solution Intelligence Engine dashboard](docs/assets/overview.png)
 
 ## Highlights
@@ -25,13 +22,25 @@ demo dataset.
 - **Semantic retrieval with confidence** — matches a new issue against
   proven solutions using multilingual embeddings, then blends similarity with
   historical success rate, exact error-code/module/environment matches,
-  recency, and consultant feedback into a deterministic 0–100% confidence
+  recency, and consultant feedback into a deterministic 0–1 confidence
   score — weighted, auditable, and explainable.
-- **Trust-first "why" panel** — each answer shows its source system,
-  similarity scores, confidence, and prior success, so no decision is a
-  black box.
+- **Says "not confident" instead of guessing** — when the evidence is thin,
+  the engine declines and asks for the missing detail rather than offering the
+  nearest look-alike. A hedged answer shows no ticket numbers, no success
+  counts, and no feedback prompts, because none of those support a
+  recommendation it did not make.
+- **Confidence without the false precision** — the composite score is a
+  weighted blend, not a probability, so the UI never presents it as a
+  percentage. It quotes a track record instead ("worked 8 of 8 times"), and
+  the weighted numbers sit behind a **Show scoring detail** toggle.
+- **Trust-first "why" panel** — each answer leads with plain-English reasons
+  ("the error code you gave matches this record exactly", "it has worked
+  every time it was tried") plus its source system and prior success, so no
+  decision is a black box.
 - **Conversational refinement** — a chat agent re-ranks candidates from
-  follow-up questions without calling an external model.
+  follow-up questions without calling an external model, remembers which
+  record you ruled out, and carries an error code, module, and environment
+  from one turn into the next.
 - **Human-in-the-loop** — near-duplicates are flagged for human review with
   the AI's reasoning attached instead of silently auto-committed.
 - **Trilingual out of the box** — a single English query surfaces matching
@@ -165,12 +174,30 @@ just coverage        # backend coverage report
 just eval            # pilot evaluation: three ranking modes over labeled cases
 ```
 
+### Demo verification and recording
+
+The demo claims are executable rather than prose, so they cannot silently rot:
+
+```bash
+just web-demo-video     # record the scripted walkthrough (needs the API running)
+just web-demo-mp4       # convert the recording to MP4 (needs ffmpeg)
+uv run python scripts/demo_sweep.py   # check the documented demo answers
+```
+
+`demo_sweep.py` exercises 25 queries across search and chat and fails if an
+answer drifts from what the documentation claims. The recorded walkthrough
+asserts the behaviour it captures, so the video cannot disagree with the
+product. Output lands in `apps/web/demo-video/` and is not committed.
+
 ## Documentation
 
 Docs follow the [Diátaxis](https://diataxis.fr/) framework and are built with
 MkDocs Material:
 
-- **Tutorials** — demo walkthrough, multilingual showcase
+- **Tutorials** — [demo walkthrough](docs/tutorials/demo-script.md),
+  [Find a Solution script](docs/tutorials/demo-find-script.md),
+  [Chat conversations](docs/tutorials/demo-conversations.md), multilingual
+  showcase
 - **How-to** — run the API, run the frontend, run tests
 - **Reference** — auto-generated API docs from docstrings
 - **Explanation** — how the pipeline grades, embeds, and trusts records
@@ -180,6 +207,12 @@ MkDocs Material:
 just docs-build      # strict MkDocs build (fails on warnings)
 just docs-serve      # local docs on :8001
 ```
+
+Verified query tables live in
+[demo-queries.md](docs/tutorials/demo-queries.md) and
+[demo-find-queries.md](docs/tutorials/demo-find-queries.md), and the
+narrative used for the competition walkthrough is
+[verification-script.md](docs/tutorials/verification-script.md).
 
 ## Project Structure
 
@@ -208,8 +241,10 @@ just docs-serve      # local docs on :8001
 ## Configuration
 
 The backend and dataset size are configurable from the dashboard sidebar
-(Debug 3 / Small 8 / Full 78 records). Frontend and backend options are kept
-in sync through the API's config endpoints.
+(Debug (3) / Small (8) / Full (76) records). Frontend and backend options are
+kept in sync through the API's config endpoints. The full option indexes 56
+distinct records; the rest of the 76 are rejected by design as junk,
+restricted, escalated, or near-duplicate copies of a record already indexed.
 
 ## Contributing
 
