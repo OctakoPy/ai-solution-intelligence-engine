@@ -12,6 +12,7 @@ from apps.api.models import (
     SearchResponse,
 )
 from apps.api.policy import evaluate_policy, to_next_best_action
+from solution_intelligence.policy import prefer_topical
 from apps.api.views import SOURCE_LABELS
 from apps.api.why import attach_why
 from solution_intelligence.retrieval import IncidentContext as CoreContext
@@ -37,6 +38,7 @@ async def search(req: SearchRequest) -> SearchResponse:
     engine = get_or_build_engine(0)
     context = _to_context(req.context)
     hits = engine.search(req.query, top_k=req.top_k, context=context)
+    hits = prefer_topical(hits, req.query, context)
     all_entries = engine.index.entries
     payload = [
         RetrievedSolution(
@@ -58,7 +60,7 @@ async def search(req: SearchRequest) -> SearchResponse:
         )
         for h in hits
     ]
-    verdict = evaluate_policy(hits, context)
+    verdict = evaluate_policy(hits, context, query=req.query)
     return SearchResponse(
         results=payload,
         next_best_action=to_next_best_action(verdict),

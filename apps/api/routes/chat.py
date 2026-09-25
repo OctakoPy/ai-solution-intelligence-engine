@@ -16,15 +16,17 @@ from apps.api.models import (
     NextBestAction,
     RetrievedSolution,
 )
-from apps.api.policy import CHAT_SCORE_BOOST, evaluate_policy, to_next_best_action
+from apps.api.policy import (
+    CHAT_SCORE_BOOST,
+    evaluate_policy,
+    to_next_best_action,
+)
 
 from apps.api.views import SOURCE_LABELS
 from apps.api.why import attach_why
 from solution_intelligence.policy import (
     ABSTAIN_THRESHOLD,
     CONFIDENT_THRESHOLD,
-    PROVEN_FLOOR,
-    PROVEN_MIN_ATTEMPTS,
 )
 from solution_intelligence.retrieval import IncidentContext as CoreContext
 
@@ -97,80 +99,63 @@ def _build_assistant_turn(
     query: str,
     candidates: list[RetrievedSolution],
     next_best_action: NextBestAction | None = None,
+    rejected_titles: list[str] | None = None,
 ) -> str:
     """Compose a deterministic assistant reply from the current candidates.
 
-    When the shared abstain policy produces a next-best action, its message
-    is appended so the reply text and the structured payload never disagree.
+    The caller passes the same ``next_best_action`` the banner renders, so the
+    prose and the guidance can never disagree: when a next-best action is
+    present, the policy already declined to offer a fix, and the reply says so
+    instead of presenting a look-alike as the best answer.
+
+    ``rejected_titles`` names the records the user ruled out in this message,
+    so the reply can say what it eliminated and moved on to, rather than
+    silently swapping the answer.
     """
-    if not candidates:
+    ruled_out = ""
+    if rejected_titles:
+        named = ", ".join(rejected_titles[:2])
+        ruled_out = f"Ruling that out: {named}."
+
+    if not candidates or next_best_action is not None:
         if next_best_action is not None:
+            # The banner names the record it judged, and the cards below the
+            # reply list it, so the prose stays clean and the two surfaces
+            # cannot disagree. "Here is the next best match instead" belongs
+            # only on the path that actually offers one.
+            if ruled_out:
+                return f"{next_best_action.message} {ruled_out}"
             return next_best_action.message
-        return "No confident matches found. Try describing the issue differently."
+        return (
+            "I couldn't find an appropriate match in the available records for "
+            "that. Try describing the issue differently, or escalate to a "
+            "subject-matter expert."
+        )
     top = candidates[0]
-    if (
-        top.score < _CHAT_LOW_CONFIDENCE_THRESHOLD
-        and not (
-            top.worked >= top.attempted
-            and top.attempted >= PROVEN_MIN_ATTEMPTS
-            and top.confidence >= PROVEN_FLOOR
-        )
-    ):
-        best = round(top.score * 100)
-        lines = [
-            "None of the historical records are a confident match — the best "
-            f"one is only {best}% similar. I won't guess a fix, because a "
-            "wrong answer here could make things worse.",
-            "Here are the nearest look-alikes, purely as a starting point for "
-            "a specialist:",
-        ]
-        for idx, c in enumerate(candidates, start=1):
-            lines.append(f"{idx}. **{c.title}** — {round(c.score * 100)}% match")
-        lines.append(
-            next_best_action.message
-            if next_best_action is not None
-            else (
-                "My recommendation: escalate to a subject-matter expert for manual "
-                "handling rather than auto-applying a solution."
-            )
-        )
-        return "\n\n".join(lines)
-    if (
-        top.score < _CHAT_CONFIDENT_THRESHOLD
-        and not (
-            top.worked >= top.attempted
-            and top.attempted >= PROVEN_MIN_ATTEMPTS
-            and top.confidence >= PROVEN_FLOOR
-        )
-    ):
-        best = round(top.score * 100)
-        lines = [
-            (
-                f"I'm not fully certain of an exact match — the closest record "
-                f"is about {best}% similar."
-            ),
-            "Here are the closest matches I could find — are any of these helpful?",
-        ]
-        for idx, c in enumerate(candidates, start=1):
-            lines.append(f"{idx}. **{c.title}** — {round(c.score * 100)}% match")
-        if next_best_action is not None:
-            lines.append(next_best_action.message)
-        return "\n\n".join(lines)
-    lines = [
-        "This issue is usually caused by cached authentication or sync settings. "
-        "Here are the steps that resolved it for similar cases:",
-    ]
-    for idx, c in enumerate(candidates, start=1):
-        lines.append(f"{idx}. **{c.title}** — {round(c.score * 100)}% match")
-    lines.append(
-        f"This solved the issue in {round(top.score * 100)}% of similar cases."
+    ruled_out = f"{ruled_out} Here is the next best match instead." if ruled_out else ""
+    intro = (
+        f"According to the available documentation, the best answer is **{top.title}**."
     )
-    sources = " · ".join(
-        f"{c.title} ({c.source}) – {c.date} ({round(c.score * 100)}%)"
-        for c in candidates[:2]
+    steps = top.resolution.strip()
+    # The counts stay alongside the plain sentence: "9 of 9" is concrete
+    # evidence a business audience trusts, and unlike a percentage it cannot
+    # be misread as a probability.
+    evidence = (
+        f"Track record: worked {top.worked} of {top.attempted} times."
+        if top.attempted > 0
+        else ""
     )
-    lines.append(f"Sources: {sources}")
-    return "\n\n".join(lines)
+    return "\n\n".join(
+        part
+        for part in (
+            intro,
+            f"**How to fix it**\n{steps}" if steps else None,
+            top.confidence_note or None,
+            evidence or None,
+            ruled_out or None,
+        )
+        if part
+    )
 
 
 @router.post("/api/chat/start", response_model=ChatResponse)
@@ -179,16 +164,19 @@ async def chat_start(req: ChatStartRequest) -> ChatResponse:
     engine = get_or_build_engine(0)
     context = _to_context(req.context)
     session = engine.agent.start(req.session_id, req.query, context=context)
+    # The agent already returns the order it presents, so the session's
+    # top candidate and the card the user sees are the same record.
+    core_hits = session.turns[-1].candidates if session.turns else []
     candidates = (
         _hits_to_solutions(
-            session.turns[-1].candidates,
+            core_hits,
             all_entries=engine.index.entries,
             context=context,
         )
         if session.turns
         else []
     )
-    verdict = evaluate_policy(session.turns[-1].candidates, context, surface="chat")
+    verdict = evaluate_policy(core_hits, context, query=req.query, surface="chat")
     reply = _build_assistant_turn(
         req.query, candidates, next_best_action=to_next_best_action(verdict)
     )
@@ -208,18 +196,37 @@ async def chat_start(req: ChatStartRequest) -> ChatResponse:
 async def chat_respond(req: ChatRespondRequest) -> ChatResponse:
     """Send a follow-up message within an existing chat session."""
     engine = get_or_build_engine(0)
+    rejected_titles_before: list[str] = []
+    if req.session_id in engine.agent.sessions:
+        rejected_titles_before = list(
+            engine.agent.sessions[req.session_id].rejected_titles
+        )
     if req.session_id not in engine.agent.sessions:
         session = engine.agent.start(req.session_id, req.message)
-        core_hits = session.turns[-1].candidates
     else:
         session = engine.agent.respond(req.session_id, req.message)
-        core_hits = session.turns[-1].candidates
+    core_hits = session.turns[-1].candidates
     candidates = _hits_to_solutions(
         core_hits, all_entries=engine.index.entries, context=session.context
     )
-    verdict = evaluate_policy(core_hits, session.context, surface="chat")
+    verdict = evaluate_policy(
+        core_hits,
+        session.context,
+        query=f"{session.query} {req.message}",
+        surface="chat",
+    )
+    # Records ruled out by this very message, so the reply can name them.
+    # The titles come from the session because a rejected record is already
+    # demoted out of the candidate list by the time we get here.
+    titles_before = rejected_titles_before
+    newly_rejected = [
+        title for title in session.rejected_titles if title not in titles_before
+    ]
     reply = _build_assistant_turn(
-        req.message, candidates, next_best_action=to_next_best_action(verdict)
+        req.message,
+        candidates,
+        next_best_action=to_next_best_action(verdict),
+        rejected_titles=newly_rejected,
     )
     session.add_system(reply)
     turns: list[ChatTurn] = []

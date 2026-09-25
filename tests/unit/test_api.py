@@ -202,14 +202,16 @@ async def test_search_evidence_includes_duplicate_group_peers(
 
 @pytest.mark.anyio
 async def test_search_vague_query_returns_next_best_action(client: AsyncClient) -> None:
-    """A weak unproven match escalates; a weak proven match proceeds."""
-    await client.post("/api/ingest", json={"max_entries": 12})
+    """A weak match on a record without a trusted history still gets guidance."""
+    await client.post("/api/ingest", json={"max_entries": 0})
 
-    # VPN drops: top hit is unproven (worked 11 of 13) and weak → escalate.
+    # Off-topic: no record is about this, so it must decline. (VPN at 11 of
+    # 13 is now trusted, so it proceeds; the trust bar is the history, not
+    # perfection, and there is a separate test for the history bar below.)
     resp = await client.post(
         "/api/search",
         json={
-            "query": "VPN drops after 5 minutes, reconnect fails on Windows 11",
+            "query": "i ran out of milk in my house",
             "top_k": 5,
         },
     )
@@ -224,7 +226,7 @@ async def test_search_vague_query_returns_next_best_action(client: AsyncClient) 
         assert nba["nearest_record_id"]
         assert nba["nearest_record_title"]
 
-    # zreport99: top hit TIC-1001 has worked 8/8 — proven, so proceed even at 41%.
+    # zreport99: top hit TIC-1001 has worked 8/8 — trusted, so proceed even at 41%.
     resp = await client.post(
         "/api/search",
         json={
@@ -234,6 +236,31 @@ async def test_search_vague_query_returns_next_best_action(client: AsyncClient) 
     )
     assert resp.status_code == 200
     assert resp.json()["next_best_action"] is None
+
+
+@pytest.mark.anyio
+async def test_find_answers_on_a_strong_but_imperfect_history(
+    client: AsyncClient,
+) -> None:
+    """A fix that usually works is answerable even when it is not flawless.
+
+    Outlook sync is 15 of 17. Requiring worked == attempted for the abstain
+    decision made Find a Solution escalate on the record whose own outcome
+    data says it works 88% of the time, while Chat answered it purely because
+    its display boost crossed the threshold. The two surfaces disagreed on
+    whether a record was good enough to show.
+    """
+    await client.post("/api/ingest", json={"max_entries": 0})
+    resp = await client.post(
+        "/api/search",
+        json={"query": "Outlook not syncing new emails", "top_k": 5},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    top = body["results"][0]
+    assert top["id"] == "TIC-1017"
+    assert top["worked"] < top["attempted"]  # not perfect, and must still answer
+    assert body["next_best_action"] is None
 
 
 @pytest.mark.anyio
@@ -354,14 +381,25 @@ async def test_policy_matches_displayed_score_on_both_surfaces(
     Find displays confidence directly; Chat boosts similarity. On each
     surface, a top hit below the abstain band must carry a next-best
     action, and one at or above the confident band must not. Proven
-    records are the exception: when the history is perfect, the
-    percentage alone is misleading, so guidance is to proceed.
+    records are the exception: a perfect history lets a below-band hit
+    proceed, but only when the query is topically about the record, so a
+    popular record about a different system still gets a banner.
     """
 
     def _is_proven(top: dict) -> bool:
         worked = top.get("worked", 0)
         attempted = top.get("attempted", 0)
         return attempted >= 3 and worked >= attempted
+
+    # Queries that name their subject, so a proven below-band hit may
+    # proceed via the proven override. A query that names no system at all
+    # ("i ran out of milk") gets no such pass: it has nothing to vouch for
+    # the record, so the banner still appears.
+    topical = {
+        "user cannot access FI reports in SAP, authorization error",
+        "goods receipt posting error",
+        "the custom abap program zreport99 keeps erroring",
+    }
 
     await client.post("/api/ingest", json={"max_entries": 0})
 
@@ -376,7 +414,7 @@ async def test_policy_matches_displayed_score_on_both_surfaces(
         ).json()
         top = find["results"][0]
         displayed = top["score"]  # find displays confidence as score
-        if _is_proven(top) and displayed < 0.90:
+        if _is_proven(top) and displayed < 0.90 and query in topical:
             assert find["next_best_action"] is None, query
         elif displayed < 0.75:
             assert find["next_best_action"] is not None, query
@@ -392,7 +430,7 @@ async def test_policy_matches_displayed_score_on_both_surfaces(
         ).json()
         ctop = chat["candidates"][0]
         cdisplayed = ctop["score"]  # chat displays the boosted score
-        if _is_proven(ctop) and cdisplayed < 0.90:
+        if _is_proven(ctop) and cdisplayed < 0.90 and query in topical:
             assert chat["next_best_action"] is None, query
         elif cdisplayed < 0.75:
             assert chat["next_best_action"] is not None, query
@@ -459,6 +497,64 @@ async def test_chat_start_accepts_context(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+async def test_chat_confident_reply_quotes_real_resolution_and_track_record(
+    client: AsyncClient,
+) -> None:
+    """A confident reply leads with the top record's own resolution text and
+    its real worked/attempted count — never a canned cause or a score
+    misrepresented as a success rate."""
+    # Full dataset: the Fiori records are past the first twelve entries, and
+    # this question must be answered by a Fiori record rather than by an
+    # unrelated one that merely sits near the front of the file.
+    await client.post("/api/ingest", json={"max_entries": 0})
+    resp = await client.post(
+        "/api/chat/start",
+        json={
+            "query": "fiori my inbox app no longer shows the pending approval items for the it operations manager",
+            "session_id": "confident1",
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["next_best_action"] is None
+    top = body["candidates"][0]
+    assert top["category"] == "sap_fiori"
+    reply = body["turns"][-1]["text"]
+    assert "According to the available documentation" in reply
+    assert top["title"] in reply
+    assert top["resolution"] in reply
+    assert f"{top['worked']} of {top['attempted']}" in reply
+    # The old fabricated lines must be gone for good.
+    assert "usually caused by" not in reply
+    assert "solved the issue in" not in reply
+    # It must not enumerate look-alikes in the default view.
+    assert "look-alike" not in reply
+    assert "closest matches" not in reply.lower()
+
+
+@pytest.mark.anyio
+async def test_chat_no_match_reply_is_clean_and_actionable(
+    client: AsyncClient,
+) -> None:
+    """When the policy escalates, the reply says no match was found and points
+    at the next step without padding the answer with look-alike cards."""
+    await client.post("/api/ingest", json={"max_entries": 50})
+    resp = await client.post(
+        "/api/chat/start",
+        json={"query": "i ran out of milk in my house", "session_id": "nomatch1"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["next_best_action"] is not None
+    reply = body["turns"][-1]["text"]
+    assert reply == body["next_best_action"]["message"]
+    assert "look-alike" not in reply
+    assert "closest matches" not in reply.lower()
+    for candidate in body["candidates"]:
+        assert candidate["title"] not in reply
+
+
+@pytest.mark.anyio
 async def test_chat_start(client: AsyncClient) -> None:
     await client.post("/api/ingest", json={"max_entries": 3})
     resp = await client.post(
@@ -490,25 +586,29 @@ async def test_chat_respond(client: AsyncClient) -> None:
 async def test_chat_proven_weak_match_proceeds(client: AsyncClient) -> None:
     """A weak top hit with a perfect track record proceeds — the engine
     trusts the history over the low score."""
-    await client.post("/api/ingest", json={"max_entries": 12})
+    # Full dataset: see test_chat_confident_reply_quotes_real_resolution for
+    # why a partial ingest cannot answer a Fiori question.
+    await client.post("/api/ingest", json={"max_entries": 0})
     resp = await client.post(
         "/api/chat/start",
         json={
-            "query": "po approval tile missing from fiori launchpad after update",
+            "query": "my inbox fiori app is not showing approval items for the it operations manager",
             "session_id": "t3",
         },
     )
     assert resp.status_code == 200
     body = resp.json()
     top = body["candidates"][0]
+    # The answer must be a Fiori record, not merely a good-scoring one
+    # from another system that happens to mention the same vendor.
+    assert top["category"] == "sap_fiori"
     assert top["worked"] >= top["attempted"] and top["attempted"] >= 3
     # No "escalate" wording anywhere in the reply — it offers the fix instead.
-    assert not any(
-        "escalate" in t["text"].lower() for t in body["turns"]
-    )
-    # And one turn offers the proven fix directly.
+    assert not any("escalate" in t["text"].lower() for t in body["turns"])
+    # And one turn offers the proven fix directly, leading with the record.
     assert any(
-        "usually caused by" in t["text"] or "resolved it" in t["text"]
+        "According to the available documentation" in t["text"]
+        and top["title"] in t["text"]
         for t in body["turns"]
     )
 
@@ -545,7 +645,9 @@ async def test_search_proven_below_floor_escalates(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
-async def test_search_supermarket_proven_below_floor_escalates(client: AsyncClient) -> None:
+async def test_search_supermarket_proven_below_floor_escalates(
+    client: AsyncClient,
+) -> None:
     """Another weak query — even a 6/6 proven record at 33%
     is not enough — the banner still appears."""
     await client.post("/api/ingest", json={"max_entries": 50})
@@ -711,3 +813,98 @@ async def test_full_dataset_duplicate_policy(client: AsyncClient) -> None:
             assert v["checks"][-1]["result"] == "reject"
             if dup_checks:
                 assert dup_checks[-1]["result"] == "reject"
+
+
+@pytest.mark.anyio
+async def test_rejection_narrows_to_same_subject_and_says_so(
+    client: AsyncClient,
+) -> None:
+    """A fix reported as not working is named in the reply, and the next
+    answer stays on the same subject.
+
+    The record that was ruled out is already out of the candidate list by the
+    time the reply is written, so the title has to survive somewhere or the
+    engine silently swaps answers with no explanation.
+    """
+    await client.post("/api/ingest", json={"max_entries": 0})
+    start = await client.post(
+        "/api/chat/start",
+        json={
+            "query": "sap transaction me23n running slow for finance team",
+            "session_id": "reject1",
+        },
+    )
+    assert start.status_code == 200
+    first = start.json()["candidates"][0]
+    assert first["category"] == "sap_performance"
+
+    follow_up = await client.post(
+        "/api/chat/respond",
+        json={"session_id": "reject1", "message": "that did not work, still slow"},
+    )
+    assert follow_up.status_code == 200
+    body = follow_up.json()
+
+    # The reply says which record was ruled out.
+    reply = body["turns"][-1]["text"]
+    assert first["title"] in reply
+    # It does not offer that record again.
+    assert body["candidates"][0]["id"] != first["id"]
+    # And the next answer is still about the same subject: previously an
+    # unrelated authorization record was served here on a bare "SAP" match.
+    assert body["candidates"][0]["category"] == "sap_performance"
+
+
+@pytest.mark.anyio
+async def test_wrong_subject_record_is_not_served_as_the_answer(
+    client: AsyncClient,
+) -> None:
+    """Sharing a vendor is not topical evidence.
+
+    Every SAP record contains the word "SAP", so matching on it alone let an
+    FI-authorization record answer a Fiori question. The Fiori records sit
+    past the first twelve entries, so this needs the full dataset to be a
+    meaningful check.
+    """
+    await client.post("/api/ingest", json={"max_entries": 0})
+    resp = await client.post(
+        "/api/search",
+        json={"query": "po approval tile missing from fiori launchpad after update"},
+    )
+    assert resp.status_code == 200
+    top = resp.json()["results"][0]
+    assert top["category"] == "sap_fiori"
+
+
+@pytest.mark.anyio
+async def test_banner_and_answer_agree_on_the_same_record(
+    client: AsyncClient,
+) -> None:
+    """The record the policy judged is the record the user is shown.
+
+    The topical gate can overrule the top-ranked hit. When it does, the
+    promoted record has to reach the cards too, or the banner describes one
+    record and the reply quotes another.
+    """
+    await client.post("/api/ingest", json={"max_entries": 0})
+    resp = await client.post(
+        "/api/chat/start",
+        json={
+            "query": "po approval tile missing from fiori launchpad after update",
+            "session_id": "agree1",
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    top = body["candidates"][0]
+    nba = body["next_best_action"]
+    reply = body["turns"][-1]["text"]
+    if nba is None:
+        assert top["title"] in reply
+    else:
+        # The banner names a record, so the user can see it in the cards
+        # even though the reply prose stays clean.
+        assert nba["message"] in reply
+        if nba["nearest_record_id"]:
+            assert nba["nearest_record_id"] == top["id"]
+            assert nba["nearest_record_title"] == top["title"]
