@@ -92,6 +92,7 @@ export interface RetrievedSolution {
   signal_breakdown?: Partial<Record<SignalKey, number>>;
   worked?: number;
   attempted?: number;
+  confidence_note?: string;
   evidence?: EvidenceRecord[];
   caveats?: string[];
 }

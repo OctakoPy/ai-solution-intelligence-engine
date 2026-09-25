@@ -151,5 +151,13 @@ web-test:
 web-e2e:
     cd apps/web && npm run e2e
 
+# Record the scripted product walkthrough to apps/web/demo-video/
+web-demo-video:
+    cd apps/web && DEMO_VIDEO=1 npm run e2e -- demo.spec.ts
+
+# Convert the recorded walkthrough to MP4 (needs ffmpeg on PATH)
+web-demo-mp4:
+    cd apps/web && ffmpeg -y -i demo-video/*/video.webm -c:v libx264 -pix_fmt yuv420p -crf 20 -movflags +faststart demo-video/resolveiq-demo.mp4
+
 # Combined local CI for backend + frontend
 check-all: format-check lint type-check test web-typecheck web-lint web-build

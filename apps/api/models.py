@@ -155,6 +155,7 @@ class RetrievedSolution(BaseModel):
     signal_breakdown: dict[str, float] = {}
     worked: int = 0
     attempted: int = 0
+    confidence_note: str = ""
     evidence: list[EvidenceRecord] = []
     caveats: list[str] = []
 

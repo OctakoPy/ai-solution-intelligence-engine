@@ -90,18 +90,33 @@ def test_decide_escalates_below_abstain_threshold():
     assert nba is not None
     assert nba["action"] == "escalate_sme"
     assert nba["nearest_record"] == {"id": "T", "title": "vpn drops"}
-    assert "50%" in nba["message"]
+    # No percentage: the composite score is a weighted blend, not a
+    # probability, and a bare figure reads as "50% chance this is right".
+    assert "50%" not in nba["message"]
+    assert "closely enough to recommend" in nba["message"]
 
 
 def test_decide_proven_record_bypasses_abstain():
-    """A proven fix is a go once the confidence is above the floor."""
+    """A proven fix is a go once the confidence is above the floor and the
+    query is topically about the record."""
     hit = make_hit(confidence=0.51)
     hit.entry.worked_count = (8, 8)  # proven fix
     assert is_proven(hit) is True
     assert hit.confidence >= PROVEN_FLOOR
-    verdict = decide(hit)
+    verdict = decide(hit, query="vpn keeps dropping every hour")
     assert verdict.action == "proceed"
     assert verdict.next_best_action is None
+
+
+def test_decide_proven_record_off_topic_escalates():
+    """A perfect track record is not enough when the query is about a
+    different system: the success history is already inside the composite
+    score, so it must not also veto the abstain decision."""
+    hit = make_hit(confidence=0.51)
+    hit.entry.worked_count = (8, 8)
+    assert is_proven(hit) is True
+    verdict = decide(hit, query="users cannot log in to outlook")
+    assert verdict.action == "escalate_sme"
 
 
 def test_decide_proven_record_below_floor_escalates():
@@ -114,6 +129,7 @@ def test_decide_proven_record_below_floor_escalates():
     verdict = decide(hit)
     assert verdict.action == "escalate_sme"
 
+
 def test_decide_unproven_record_at_low_confidence_escalates():
     """Unproven weak match still escalates (explicit control)."""
     hit = make_hit(confidence=0.41)
@@ -121,6 +137,7 @@ def test_decide_unproven_record_at_low_confidence_escalates():
     assert is_proven(hit) is False
     verdict = decide(hit)
     assert verdict.action == "escalate_sme"
+
 
 def test_decide_under_min_attempts_is_not_proven():
     """A perfect record with too few attempts isn't trusted yet."""
@@ -130,6 +147,7 @@ def test_decide_under_min_attempts_is_not_proven():
     assert is_proven(hit) is False
     verdict = decide(hit)
     assert verdict.action == "escalate_sme"
+
 
 def test_decide_with_no_hits_escalates_without_nearest():
     verdict = decide(None)

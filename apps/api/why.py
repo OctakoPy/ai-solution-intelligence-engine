@@ -96,8 +96,8 @@ def _build_caveats(
     group = hit_entry_group(all_entries, hit.entry.id)
     if group is None:
         caveats.append(
-            "Unverified record: no linked recurrence in another source "
-            "system corroborates this fix yet."
+            "Seen in one system only so far — no second source has logged "
+            "this problem yet, so there is nothing to cross-check it against."
         )
     if hit.entry.attempted == 0:
         caveats.append(
@@ -111,6 +111,37 @@ def _build_caveats(
     return caveats
 
 
+def confidence_note(hit: RetrievedSolution) -> str:
+    """One plain sentence saying why this record can be trusted.
+
+    A business audience always asks why a record that "worked 8 of 8" is
+    shown at a middling percentage. The honest answer is the reasons, not a
+    figure: the composite score is a weighted blend, and a bare number invites
+    reading it as a probability of success. Naming the evidence answers the
+    question directly and keeps the wording identical on Find and Chat.
+    """
+    entry = hit.entry
+    worked, attempted = entry.worked, entry.attempted
+    perfect = attempted > 0 and worked == attempted
+    strong = attempted > 0 and (worked / attempted) >= 0.8
+    exact = "error_code" in (getattr(hit, "signals", None) or [])
+
+    if perfect and exact:
+        return (
+            "High confidence - the error code matches exactly, and this fix "
+            "has worked every time it was tried."
+        )
+    if perfect:
+        return "High confidence - this fix has worked every time it was tried."
+    if strong and exact:
+        return "Good confidence - the error code matches, and this fix usually works."
+    if strong:
+        return "Good confidence - this fix has usually worked."
+    if attempted == 0:
+        return "Worth reviewing - this is a related record with no outcome history yet."
+    return "Worth reviewing - this is a related record, not a confirmed match."
+
+
 def attach_why(
     hit: RetrievedSolution,
     all_entries: list[KnowledgeEntry],
@@ -120,7 +151,8 @@ def attach_why(
 
     Returns keyword arguments for the API ``RetrievedSolution`` schema:
     the per-signal breakdown, prior-success counts, supporting evidence
-    records, and caveats. Pure function of the hit and the index contents.
+    records, caveats, and the plain-language confidence note. Pure function of
+    the hit and the index contents.
     """
     return {
         "signal_breakdown": {k: round(v, 4) for k, v in hit.signal_breakdown.items()},
@@ -128,4 +160,5 @@ def attach_why(
         "attempted": hit.entry.attempted,
         "evidence": _build_evidence(hit, all_entries),
         "caveats": _build_caveats(hit, all_entries, context=context),
+        "confidence_note": confidence_note(hit),
     }

@@ -54,6 +54,10 @@ nav:
   - Tutorials:
       - Overview: tutorials/index.md
       - Demo Script: tutorials/demo-script.md
+      - Demo Conversations: tutorials/demo-conversations.md
+      - Find a Solution Script: tutorials/demo-find-script.md
+      - Find a Solution Queries: tutorials/demo-find-queries.md
+      - Demo Queries: tutorials/demo-queries.md
       - Verification Script: tutorials/verification-script.md
   - How-To:
       - Overview: how-to/index.md

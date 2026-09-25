@@ -82,6 +82,30 @@ def test_load_filtered_balanced():
     assert len(entries) <= 8
 
 
+@pytest.mark.parametrize("max_total", [1, 2, 4, 8, 20, 38, 40, 76, 77, 78, 100])
+def test_load_filtered_returns_requested_count(max_total):
+    available = len(load_entries(path="data/knowledge.json"))
+    entries = load_filtered(path="data/knowledge.json", max_total=max_total)
+    assert len(entries) == min(max_total, available)
+
+
+@pytest.mark.parametrize("max_total", [1, 2, 4, 8, 20, 38, 40, 76, 100])
+def test_load_filtered_has_no_duplicates(max_total):
+    entries = load_filtered(path="data/knowledge.json", max_total=max_total)
+    ids = [entry.id for entry in entries]
+    assert len(ids) == len(set(ids))
+
+
+def test_load_filtered_keeps_every_source_when_budget_allows():
+    entries = load_filtered(path="data/knowledge.json", max_total=20)
+    assert {entry.source_type for entry in entries} == {
+        "ticket",
+        "sap_note",
+        "sharepoint_doc",
+        "kb_article",
+    }
+
+
 def test_stage1_rejects_junk():
     filter = Stage1Filter()
     junk = make_entry(quality="junk")

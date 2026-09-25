@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { WhyPanel } from "@/components/ui/why-panel";
 import { describe, it, expect } from "vitest";
 import type { RetrievedSolution } from "@/lib/types";
@@ -42,8 +43,16 @@ const baseSolution: RetrievedSolution = {
 };
 
 describe("WhyPanel", () => {
-  it("renders contributing signals with weighted values", () => {
+  it("leads with plain-language reasons and keeps the numbers behind a toggle", async () => {
     render(<WhyPanel solution={baseSolution} />);
+    expect(screen.getByText("The description reads like your question")).toBeTruthy();
+    expect(
+      screen.getByText("It has worked every time it was tried (8 of 8)"),
+    ).toBeTruthy();
+    expect(screen.queryByText("Text similarity")).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "Show scoring detail" }));
+
     expect(screen.getByText("Text similarity")).toBeTruthy();
     expect(screen.getByText("Historical success")).toBeTruthy();
     expect(screen.getByText("Error-code match")).toBeTruthy();
@@ -85,8 +94,14 @@ describe("WhyPanel", () => {
   });
 
   it("renders a neutral note when no signals contributed", () => {
-    const empty = { ...baseSolution, signal_breakdown: {} };
+    const empty = {
+      ...baseSolution,
+      signal_breakdown: {},
+      worked: 0,
+      attempted: 0,
+      evidence: [],
+    };
     render(<WhyPanel solution={empty} />);
-    expect(screen.getByText(/No signals contributed/)).toBeTruthy();
+    expect(screen.getByText("No strong signals — this is a weak match")).toBeTruthy();
   });
 });

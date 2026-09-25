@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Callable
@@ -75,6 +76,18 @@ class KnowledgeIndex:
     def entries(self) -> list[KnowledgeEntry]:
         """All indexed entries."""
         return list(self._entries.values())
+
+    def similarity_to(self, entry_id: str, text: str) -> float:
+        """Semantic similarity between a query and one indexed record.
+
+        Used when a record is added to a result list outside the normal
+        top-k pass, so it still carries its real similarity rather than a
+        placeholder.
+        """
+        vec = self._vectors.get(entry_id)
+        if vec is None:
+            return 0.0
+        return self.embedder.similarity(self.embedder.embed(text, for_query=True), vec)
 
     def query(self, text: str, top_k: int = 5) -> list[RetrievedSolution]:
         """Return the top-k matches for a free-text issue description."""
@@ -249,7 +262,131 @@ def rank_results(
         key=lambda c: (c.confidence, c.entry.success_rate, c.score),
         reverse=True,
     )
-    return pool[:top_k]
+    return _with_language_coverage(pool, top_k, index, query, context)
+
+
+# Tokens too common to identify a specific record on their own.
+_COVERAGE_STOP = frozenset(
+    {
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "of",
+        "in",
+        "on",
+        "for",
+        "to",
+        "is",
+        "after",
+        "not",
+        "cannot",
+        "can",
+        "with",
+        "user",
+        "sap",
+    }
+)
+
+
+def _coverage_tokens(text: str) -> set[str]:
+    return {
+        t for t in re.findall(r"[a-z0-9]+", text.lower()) if t not in _COVERAGE_STOP
+    }
+
+
+def _same_issue(left: KnowledgeEntry, right: KnowledgeEntry) -> bool:
+    """True when two records are translations of the same underlying issue.
+
+    Translated records carry the English original in ``english_title``, so
+    the link is in the data rather than guessed: a Bahasa Malaysia or Chinese
+    record matches an English one when their titles describe the same thing.
+    """
+    pairs = (
+        (left.english_title, right.title),
+        (right.english_title, left.title),
+        (left.title, right.title),
+    )
+    for a, b in pairs:
+        if not a or not b:
+            continue
+        ta, tb = _coverage_tokens(a), _coverage_tokens(b)
+        if not ta or not tb:
+            continue
+        overlap = len(ta & tb) / min(len(ta), len(tb))
+        if overlap >= 0.6:
+            return True
+    return False
+
+
+def _with_language_coverage(
+    pool: list[RetrievedSolution],
+    top_k: int,
+    index: KnowledgeIndex,
+    query: str,
+    context: IncidentContext | None,
+) -> list[RetrievedSolution]:
+    """Keep translated copies of a strong hit inside the visible results.
+
+    A single English query is meant to surface the Bahasa Malaysia and
+    Chinese versions of the same problem alongside the English original. In
+    practice the translations sit well below the similarity pool — 6th, 8th,
+    10th, or not in the pool at all — and the page renders five cards, so the
+    feature was invisible: the demo promised translations that never appeared
+    on screen.
+
+    The siblings are therefore looked up in the index against the strongest
+    hit rather than hoped for in the pool, and they replace the weakest
+    visible cards so the page still shows exactly ``top_k`` results. Those
+    tail cards are the marginal matches for the query anyway, so the trade is
+    an improvement: an FI-report question stops showing a printer-spool
+    ticket in order to show the same answer in Chinese.
+    """
+    result = list(pool[:top_k])
+    if not result:
+        return result
+    scorer = ConfidenceScorer()
+
+    present = {
+        (c.entry.language or "en") for c in result if (c.entry.language or "en") != "en"
+    }
+    wanted = [lang for lang in ("bm", "zh") if lang not in present]
+    if not wanted:
+        return result
+
+    strongest = result[0]
+    shown_ids = {c.entry.id for c in result}
+    siblings = [
+        entry
+        for entry in index.entries
+        if (entry.language or "en") in wanted
+        and entry.id not in shown_ids
+        and _same_issue(strongest.entry, entry)
+    ]
+    if not siblings:
+        return result
+
+    # Deterministic order: the language order the demo expects, then id.
+    siblings.sort(key=lambda e: (wanted.index(e.language or "en"), e.id))
+
+    keep = len(result) - len(siblings)
+    if keep < 1:
+        siblings = siblings[: len(result) - 1]
+    result = result[: max(keep, 1)]
+    for entry in siblings:
+        # Score the promoted translation properly. Leaving it at zero made
+        # the card render as a 0% match, which reads as a broken result
+        # rather than the good translation it is.
+        similarity = index.similarity_to(entry.id, query)
+        result.append(
+            RetrievedSolution(
+                entry=entry,
+                score=round(similarity, 3),
+                confidence=scorer.score(entry, similarity, context),
+            )
+        )
+    return result
 
 
 def _normalize(value: str | None) -> str:

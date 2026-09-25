@@ -58,6 +58,7 @@ def evaluate_policy(
     hits: list[RetrievedSolution],
     context: Any,
     *,
+    query: str = "",
     surface: str = "find",
 ) -> PolicyVerdict:
     """Run the shared policy over a hit list for one surface.
@@ -65,6 +66,7 @@ def evaluate_policy(
     Args:
         hits: Ranked candidates from the shared ranking path.
         context: Structured incident context, if the user supplied any.
+        query: The user's own words, used by the topical gate.
         surface: ``"find"`` or ``"chat"`` — determines which displayed
             score the policy is evaluated against.
 
@@ -72,13 +74,22 @@ def evaluate_policy(
         The :class:`PolicyVerdict` computed from the displayed confidence
         of the top hit, so guidance and UI always agree.
     """
-    top = hits[0] if hits else None
-    if top is None:
+    if not hits:
         return decide(None, context=context)
-    displayed = _displayed_confidence(top, surface)
-    scaled = RetrievedSolution(
-        entry=top.entry,
-        score=top.score,
-        confidence=displayed,
+
+    # Scale every hit the way this surface displays it, so the topical
+    # fallback inside ``decide`` compares like with like.
+    scaled_hits = [
+        RetrievedSolution(
+            entry=hit.entry,
+            score=hit.score,
+            confidence=_displayed_confidence(hit, surface),
+        )
+        for hit in hits
+    ]
+    return decide(
+        scaled_hits[0],
+        query=query,
+        context=context,
+        candidates=scaled_hits,
     )
-    return decide(scaled, context=context)

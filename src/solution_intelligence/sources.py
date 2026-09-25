@@ -81,6 +81,12 @@ def load_filtered(
     When ``max_total`` is set and less than total available, returns a
     balanced slice across all four source types so the demo shows every
     source feeding in. When ``max_total`` >= total available, returns all.
+
+    The dataset is heavily skewed toward tickets, so a flat per-source quota
+    leaves the budget unreachable: the three smaller sources cannot fill their
+    share, and the cap silently under-delivers. Once every source has given
+    what it has, the remaining budget is filled from the dataset in order, so
+    the result is always ``min(max_total, len(entries))`` records.
     """
     entries = load_entries(path)
     if max_total is None or max_total <= 0 or max_total >= len(entries):
@@ -93,9 +99,21 @@ def load_filtered(
         KnowledgeBaseConnector,
     ]
     selected: list[KnowledgeEntry] = []
+    seen: set[str] = set()
     per_source = max(1, max_total // len(connectors))
     for connector_cls in connectors:
         connector = connector_cls()
         subset = connector.fetch(entries)
-        selected.extend(subset[:per_source])
+        for entry in subset[:per_source]:
+            selected.append(entry)
+            seen.add(entry.id)
+
+    if len(selected) < max_total:
+        for entry in entries:
+            if len(selected) >= max_total:
+                break
+            if entry.id not in seen:
+                selected.append(entry)
+                seen.add(entry.id)
+
     return selected[:max_total]
