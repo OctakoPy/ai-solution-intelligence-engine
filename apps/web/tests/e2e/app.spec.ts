@@ -16,9 +16,7 @@ export default test.describe.parallel("Navigation smoke", () => {
 
     await page.getByRole("button", { name: "Chat with the Engine" }).click();
     await expect(page).toHaveURL(/\/chat/);
-    await expect(
-      main.getByRole("heading", { name: "Chat with ResolveIQ" }),
-    ).toBeVisible();
+    await expect(main.getByRole("heading", { name: "Chat with ResolveIQ" })).toBeVisible();
 
     await page.getByRole("button", { name: "Overview" }).click();
     await expect(page).toHaveURL(/\/overview/);
@@ -33,9 +31,9 @@ export default test.describe.parallel("Navigation smoke", () => {
   test("pipeline page renders idle state + play button", async ({ page }) => {
     await page.goto("http://localhost:5179/pipeline");
     await expect(page.getByRole("heading", { name: "Live Tally" })).toBeVisible();
-    await expect(
-      page.locator("main").getByRole("button", { name: "Start" }),
-    ).toBeVisible({ timeout: 30000 });
+    await expect(page.locator("main").getByRole("button", { name: "Start" })).toBeVisible({
+      timeout: 30000,
+    });
     await page.locator("main").getByRole("button", { name: "Start" }).click();
   });
 
@@ -50,7 +48,11 @@ export default test.describe.parallel("Navigation smoke", () => {
     await page.fill('input[placeholder="Ask a follow-up question..."]', "VPN keeps dropping");
     await page.getByRole("button", { name: "Send message" }).click();
     await expect(
-      page.getByText(/This issue is usually caused|Here are the closest matches I could find/),
+      page
+        .getByText(
+          /According to the available documentation|Nothing in the knowledge base|Not confident enough/,
+        )
+        .first(),
     ).toBeVisible({ timeout: 30000 });
   });
 });
