@@ -50,7 +50,7 @@ export default test.describe.parallel("Navigation smoke", () => {
     await expect(
       page
         .getByText(
-          /According to the available documentation|Nothing in the knowledge base|Not confident enough/,
+          /According to the available documentation|Check not satisfied/,
         )
         .first(),
     ).toBeVisible({ timeout: 30000 });

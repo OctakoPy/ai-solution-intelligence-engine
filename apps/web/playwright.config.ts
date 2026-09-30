@@ -12,9 +12,7 @@ export default defineConfig({
   testIgnore: isDemo ? undefined : /demo\.spec\.ts/,
   // The walkthrough must not run alongside the parallel smoke tests.
   workers: isDemo ? 1 : undefined,
-  ...(isDemo
-    ? { outputDir: "demo-video", reporter: [["list"], ["html", { open: "never" }]] }
-    : {}),
+  ...(isDemo ? { outputDir: "demo-video", reporter: [["list"], ["html", { open: "never" }]] } : {}),
   use: {
     baseURL: "http://localhost:5179",
     trace: "on-first-retry",
@@ -22,13 +20,17 @@ export default defineConfig({
       ? {
           video: { mode: "on" as const, size: { width: 1920, height: 1080 } },
           viewport: { width: 1920, height: 1080 },
-          // Paced so a viewer can read each answer before the next beat.
-          slowMo: 400,
+          // Light touch only: the walkthrough paces itself with real typing,
+          // wheel scrolling, and explicit holds. A high value here would stall
+          // every hover and click on top of that, which reads as sluggish
+          // rather than deliberate.
+          slowMo: 120,
         }
       : {}),
   },
   webServer: {
-    command: "npm run dev & sleep 1 & (cd ../.. && uv run --no-sync uvicorn apps.api.main:app --port 8004)",
+    command:
+      "npm run dev & sleep 1 & (cd ../.. && uv run --no-sync uvicorn apps.api.main:app --port 8004)",
     timeout: 60000,
     reuseExistingServer: true,
   },
