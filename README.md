@@ -140,7 +140,7 @@ for hit in engine.search("SAP FI report access denied authorization error", top_
 
 ## Demo dataset
 
-A bundled synthetic dataset (`data/knowledge.json`, 78 records) simulates the
+A bundled synthetic dataset (`data/knowledge.json`, 104 records) simulates the
 four enterprise source systems:
 
 | Source | IDs | Records |
@@ -229,7 +229,7 @@ narrative used for the competition walkthrough is
 ├── apps/
 │   ├── api/                     # FastAPI app (routes, schemas, engine cache)
 │   └── web/                     # React + Vite dashboard
-├── data/knowledge.json          # Synthetic demo dataset (78 records)
+├── data/knowledge.json          # Synthetic demo dataset (104 records)
 ├── tests/                       # Backend tests (pytest)
 ├── apps/web/tests/              # Frontend tests (Vitest + Playwright)
 ├── notebooks/example.ipynb      # Notebook walkthrough
@@ -241,10 +241,10 @@ narrative used for the competition walkthrough is
 ## Configuration
 
 The backend and dataset size are configurable from the dashboard sidebar
-(Debug (3) / Small (8) / Full (76) records). Frontend and backend options are
-kept in sync through the API's config endpoints. The full option indexes 56
-distinct records; the rest of the 76 are rejected by design as junk,
-restricted, escalated, or near-duplicate copies of a record already indexed.
+(Debug (3) / Small (8) / Full (104) records). Frontend and backend options are
+kept in sync through the API's config endpoints. The full option indexes 83
+distinct records; the rest are rejected by design as junk, restricted,
+escalated, or near-duplicate copies of a record already indexed.
 
 ## Contributing
 

@@ -172,11 +172,11 @@ Timestamps are targets; adjust to the pacing of your screen recording.
 "This is the Solution Intelligence Engine. It's a single dashboard where
 support teams can see everything the AI has absorbed — all in one place.
 
-Right now we're looking at a full day of work: 78 records processed. That's
-78 real problems pulled in from four different IT systems — our ticketing
-system, SAP, SharePoint documents, and the internal knowledge base.
+Right now we're looking at a full day of work: 104 records processed. That's
+104 real problems pulled in from four different systems — our service desk,
+SAP, SharePoint documents, and the internal knowledge base.
 
-Notice these three numbers. Out of 78 records, most got **added** to the
+Notice these three numbers. Out of 104 records, most got **added** to the
 knowledge base so the system can reuse them later. A smaller slice got
 **rejected** — those are duplicates the AI caught automatically, so a
 consultant never has to solve the same thing twice.
@@ -199,7 +199,7 @@ needs? Then an AI quality judge reads the actual text and scores its
 explanatory quality. And last, a similarity check — is this the same problem
 we already solved?
 
-So for 78 records the pipeline **rejects** the near-duplicates the AI was
+So for 104 records the pipeline **rejects** the near-duplicates the AI was
 already confident about, and **flags** the gray-zone cases for a human
 consultant to look at. The engine never silently throws anything away — it
 just routes it to the right human attention."

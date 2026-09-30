@@ -111,7 +111,7 @@ return the same record.
 | goods receipt posting error in SAP MM, account determination issue | PROCEED | PROCEED | TIC-3011 6/6 |
 | sap transaction me23n running slow for finance team | PROCEED | PROCEED | TIC-1041 7/7 |
 | the nightly sap batch job for inventory reconciliation keeps short dumping | PROCEED | PROCEED | TIC-1031 6/7 |
-| po approval tile missing from fiori launchpad after update | PROCEED | PROCEED | TIC-3006 9/10 |
+| po approval tile missing from fiori launchpad after update | PROCEED | PROCEED | TIC-1107 14/15 |
 | my inbox fiori app is not showing approval items for the it operations manager | PROCEED | PROCEED | TIC-1048 9/9 |
 | cannot open excel attachment from sap workflow inbox | PROCEED | PROCEED | TIC-1042 11/11 |
 | VPN drops after 5 minutes, reconnect fails on Windows 11 | PROCEED | PROCEED | TIC-1008 11/13 |
@@ -130,14 +130,18 @@ boosted score for conversational phrasing, so a query can clear the answer bar
 there while Find still asks for context. The *record* is always identical, and
 the banner always matches the prose.
 
-## Two queries that decline on purpose
+## Queries that decline, and why
 
-- **"recurring idoc processing errors in logistics"** → `SAP-1044`, worked 6 of
-  9. A two-thirds success rate is below the trust bar, so the engine asks for
-  context rather than presenting it as a fix. Use
-  *"goods receipt posting error"* (6 of 6) if you want an SAP MM answer.
 - **"custom sap add-on causing session timeouts"** → declines. The only add-on
   record is still `Escalated` in the source data, so it never enters the index.
+- **"i ran out of milk in my house"**, **"what is the weather in london"**,
+  **"where is a good place to get lunch"** and **"how do i book a dentist"**
+  all decline. No record names a subject the query mentions, so there is
+  nothing for any record to vouch for.
+- **"recurring idoc processing errors in logistics"** now answers with
+  `TIC-1111` (11 of 12). It used to stop at `SAP-1044` (6 of 9), which is below
+  the trust bar. A second IDoc record now clears it — which is the point: the
+  engine answers when the evidence supports it, and stops when it does not.
 
 ## Records deliberately not in the index
 
@@ -150,5 +154,5 @@ so there is nothing to retrieve. That is the pipeline working, not a gap:
 | `hr_systems` | `access_level: restricted` — security filter |
 | `sap_addons` | `status: Escalated` — no proven fix |
 
-78 records load, 51 index. The Overview "Processed" count shows all 78; the
-other three drop out during the pipeline.
+104 records load, 83 index. The Overview "Processed" count shows all 104; the
+other three categories drop out during the pipeline.

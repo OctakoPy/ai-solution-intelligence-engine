@@ -64,6 +64,9 @@ nav:
   - Reference: reference/index.md
   - Explanation:
       - Overview: explanation/index.md
+***REMOVED***
+***REMOVED***
+***REMOVED***
   - Architecture:
       - Overview: architecture/index.md
       - ADRs: architecture/adr/index.md

@@ -102,8 +102,36 @@ Good fillers if you need a few seconds on screen:
 | `VPN drops after 5 minutes, reconnect fails on Windows 11` | `TIC-1008` | 11 of 13 |
 | `the nightly sap batch job for inventory reconciliation keeps short dumping` | `TIC-1031` | 6 of 7 |
 | `cannot open excel attachment from sap workflow inbox` | `TIC-1042` | 11 of 11 |
-| `recurring idoc processing errors in logistics` | `SAP-1044` | 6 of 9 — asks for context, on purpose |
+| `recurring idoc processing errors in logistics` | `TIC-1111` | 11 of 12 |
 | `SAP transaction ME23N running slow for Finance team` | `TIC-1041` | 7 of 7 |
+
+---
+
+## 5b. Manufacturing AMS — the beat that fits the room
+
+These are SAP application-management questions an AMS consultant would
+recognise. They are the strongest filler set for an SAP audience, and they
+double as proof the engine speaks the vocabulary rather than keyword-matching.
+
+| Query | Top result | Track record |
+| --- | --- | --- |
+| `production order will not create component allocation incomplete` | `TIC-1108` | 12 of 12 |
+| `fiori apps will not launch after the bi-annual release update` | `TIC-1107` | 14 of 15 |
+| `opc ua connection refused to the packaging line` | `TIC-1104` | 13 of 14 |
+| `material master extension fields missing after s4hana cutover` | `TIC-1101` | 11 of 12 |
+| `digital manufacturing cloud order queue stuck pending` | `TIC-1103` | 10 of 11 |
+| `warehouse task will not confirm during outbound delivery` | `TIC-1109` | 10 of 11 |
+| `inspection lot blocked by changed sampling procedure` | `TIC-1110` | 9 of 9 |
+
+**And one that declines on purpose:**
+
+| Query | Top result | Why it declines |
+| --- | --- | --- |
+| `nightly mrp background job failing after release update` | `TIC-1106` | 7 of 9 is below the trust bar, so it asks rather than recommends |
+
+That last one is worth showing: the same category of record answers at 12 of 12
+and declines at 7 of 9. The difference is the record's own history, not the
+question.
 
 ---
 
