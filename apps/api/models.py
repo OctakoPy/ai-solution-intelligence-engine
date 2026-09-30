@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-SourceType = Literal["ticket", "sap_note", "sharepoint_doc", "kb_article"]
+SourceType = Literal["service_desk", "sap", "sharepoint", "knowledge_base"]
 CheckStage = Literal["stage1", "judge", "duplicate"]
 CheckResult = Literal["pass", "flag", "reject"]
 Outcome = Literal["added", "rejected", "flagged"]
@@ -88,10 +88,10 @@ class CategoriesResponse(BaseModel):
 class SourcesResponse(BaseModel):
     """Counts of records per source type."""
 
-    ticket: int
-    sap_note: int
-    sharepoint_doc: int
-    kb_article: int
+    service_desk: int
+    sap: int
+    sharepoint: int
+    knowledge_base: int
 
 
 class IncidentContext(BaseModel):
@@ -100,6 +100,7 @@ class IncidentContext(BaseModel):
     error_code: str | None = None
     module: str | None = None
     environment: str | None = None
+    release: str | None = None
 
 
 class NextBestAction(BaseModel):

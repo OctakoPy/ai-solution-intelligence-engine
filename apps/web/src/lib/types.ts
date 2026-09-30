@@ -1,4 +1,4 @@
-export type SourceType = "ticket" | "sap_note" | "sharepoint_doc" | "kb_article";
+export type SourceType = "service_desk" | "sap" | "sharepoint" | "knowledge_base";
 
 export type CheckResult = "pass" | "flag" | "reject";
 
@@ -41,13 +41,7 @@ export interface View {
 export type Signal = "error_code" | "module" | "environment";
 
 export type SignalKey =
-  | "semantic"
-  | "error_code"
-  | "module"
-  | "environment"
-  | "success"
-  | "recency"
-  | "feedback";
+  "semantic" | "error_code" | "module" | "environment" | "success" | "recency" | "feedback";
 
 export interface EvidenceRecord {
   id: string;
@@ -62,6 +56,7 @@ export interface SearchContext {
   error_code?: string;
   module?: string;
   environment?: string;
+  release?: string;
 }
 
 export type NextBestActionKind = "ask_context" | "escalate_sme";

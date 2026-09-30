@@ -13,7 +13,7 @@ const GPU_LEVELS: GpuLevel[] = [
 const DATASET_OPTIONS: { label: string; size: number }[] = [
   { label: "Debug (3)", size: 3 },
   { label: "Small (8)", size: 8 },
-  { label: "Full (76)", size: 76 },
+  { label: "Full (104)", size: 104 },
 ];
 
 interface UIState {

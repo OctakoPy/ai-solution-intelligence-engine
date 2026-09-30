@@ -27,40 +27,40 @@ class SourceConnector:
         raise NotImplementedError
 
 
-class TicketConnector(SourceConnector):
-    """Simulates the enterprise ticketing system."""
+class ServiceDeskConnector(SourceConnector):
+    """Simulates the managed service desk that receives AMS incidents."""
 
-    source_type = "ticket"
+    source_type = "service_desk"
 
     def fetch(self, entries: Iterable[KnowledgeEntry]) -> list[KnowledgeEntry]:
-        return [e for e in entries if e.source_type == "ticket"]
+        return [e for e in entries if e.source_type == "service_desk"]
 
 
 class SapConnector(SourceConnector):
-    """Simulates the SAP system (notes and transactions)."""
+    """Simulates the SAP estate: ECC/S4HANA transactions and SAP for Me notes."""
 
-    source_type = "sap_note"
+    source_type = "sap"
 
     def fetch(self, entries: Iterable[KnowledgeEntry]) -> list[KnowledgeEntry]:
-        return [e for e in entries if e.source_type == "sap_note"]
+        return [e for e in entries if e.source_type == "sap"]
 
 
 class SharePointConnector(SourceConnector):
     """Simulates SharePoint document libraries."""
 
-    source_type = "sharepoint_doc"
+    source_type = "sharepoint"
 
     def fetch(self, entries: Iterable[KnowledgeEntry]) -> list[KnowledgeEntry]:
-        return [e for e in entries if e.source_type == "sharepoint_doc"]
+        return [e for e in entries if e.source_type == "sharepoint"]
 
 
 class KnowledgeBaseConnector(SourceConnector):
-    """Simulates the knowledge base system."""
+    """Simulates the internal knowledge base and runbook library."""
 
-    source_type = "kb_article"
+    source_type = "knowledge_base"
 
     def fetch(self, entries: Iterable[KnowledgeEntry]) -> list[KnowledgeEntry]:
-        return [e for e in entries if e.source_type == "kb_article"]
+        return [e for e in entries if e.source_type == "knowledge_base"]
 
 
 def load_entries(path: str | Path | None = None) -> list[KnowledgeEntry]:
@@ -93,7 +93,7 @@ def load_filtered(
         return entries
 
     connectors = [
-        TicketConnector,
+        ServiceDeskConnector,
         SapConnector,
         SharePointConnector,
         KnowledgeBaseConnector,

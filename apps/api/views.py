@@ -7,17 +7,17 @@ from collections import OrderedDict
 from solution_intelligence.models import PipelineStep, StageResult
 
 SOURCE_ICONS: dict[str, str] = {
-    "ticket": "\U0001f39f\ufe0f",  # 🎟️
-    "sap_note": "\U0001f5c4\ufe0f",  # 🗄️
-    "sharepoint_doc": "\U0001f4c1",  # 📁
-    "kb_article": "\U0001f4da",  # 📚
+    "service_desk": "\U0001f39f\ufe0f",  # 🎟️
+    "sap": "\U0001f5c4\ufe0f",  # 🗄️
+    "sharepoint": "\U0001f4c1",  # 📁
+    "knowledge_base": "\U0001f4da",  # 📚
 }
 
 SOURCE_LABELS: dict[str, str] = {
-    "ticket": "Ticketing System",
-    "sap_note": "SAP System",
-    "sharepoint_doc": "SharePoint",
-    "kb_article": "Knowledge Base",
+    "service_desk": "Service Desk",
+    "sap": "SAP",
+    "sharepoint": "SharePoint",
+    "knowledge_base": "Knowledge Base",
 }
 
 STAGE_NAMES: dict[str, str] = {

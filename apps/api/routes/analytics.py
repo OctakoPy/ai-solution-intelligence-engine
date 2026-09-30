@@ -42,7 +42,7 @@ async def categories(max_entries: int = 8) -> CategoriesResponse:
 async def sources(max_entries: int = 8) -> SourcesResponse:
     """Return counts per source type across the ingested dataset."""
     engine = get_or_build_engine(max_entries)
-    counts = {st: 0 for st in ("ticket", "sap_note", "sharepoint_doc", "kb_article")}
+    counts = {st: 0 for st in ("service_desk", "sap", "sharepoint", "knowledge_base")}
     for entry in engine.index.entries:
         if entry.source_type in counts:
             counts[entry.source_type] += 1

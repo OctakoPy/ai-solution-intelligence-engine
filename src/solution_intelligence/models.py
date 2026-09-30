@@ -40,6 +40,13 @@ class KnowledgeEntry:
     feedback_score: float = 0.0
     language: str = "en"
     english_title: str = ""
+    # The release this record was proven on. A fix proven before a
+    # bi-annual release update may not hold after it, so the record carries
+    # the release it is good for and a recommendation can say so.
+    release: str = ""
+    # Id of the English original, when this record is a translation of it.
+    # An explicit link beats guessing from title similarity.
+    translation_of: str = ""
     english_description: str = ""
     english_resolution: str = ""
 
@@ -77,7 +84,7 @@ class KnowledgeEntry:
             attempted = 0
         return cls(
             id=str(raw.get("id", "")),
-            source_type=str(raw.get("source_type", "ticket")),
+            source_type=str(raw.get("source_type", "service_desk")),
             title=str(raw.get("title", "")),
             description=str(raw.get("description", "")),
             resolution=str(raw.get("resolution", "")),
@@ -97,6 +104,8 @@ class KnowledgeEntry:
             feedback_score=float(raw.get("feedback_score", 0.0)),
             language=str(raw.get("language", "en")),
             english_title=str(raw.get("english_title", "")),
+            release=str(raw.get("release", "")),
+            translation_of=str(raw.get("translation_of", "")),
             english_description=str(raw.get("english_description", "")),
             english_resolution=str(raw.get("english_resolution", "")),
         )

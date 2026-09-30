@@ -1,20 +1,20 @@
 # Knowledge Dataset
 
-Synthetic knowledge index dataset for the Solution Intelligence Engine. Contains 78 entries across 4 source types: `ticket`, `sap_note`, `sharepoint_doc`, `kb_article`. Each entry includes metadata for duplicate detection, quality filtering, and retrieval scoring.
+Synthetic knowledge index dataset for the Solution Intelligence Engine. Contains 104 entries across 4 source types: `service_desk`, `sap`, `sharepoint`, `knowledge_base`. Each entry includes metadata for duplicate detection, quality filtering, and retrieval scoring.
 
 ## Source Types
 
 - `ticket` — Support tickets (TIC-XXX)
-- `sap_note` — SAP notes (SAP-XXX)
-- `sharepoint_doc` — SharePoint documents (SHA-XXX)
-- `kb_article` — Knowledge base articles (KB_-XXX)
+- `sap` — SAP ECC/S4HANA and SAP notes (SAP-XXX)
+- `sharepoint` — SharePoint documents (SHA-XXX)
+- `knowledge_base` — Knowledge base articles and runbooks (KB_-XXX)
 
 ## Key Fields
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Unique identifier per entry |
-| `source_type` | string | Type of source (ticket/sap_note/sharepoint_doc/kb_article) |
+| `source_type` | string | Type of source (service_desk/sap/sharepoint/knowledge_base) |
 | `title` | string | Short title describing the issue |
 | `description` | string | Detailed problem description |
 | `resolution` | string | Resolution/fix applied |

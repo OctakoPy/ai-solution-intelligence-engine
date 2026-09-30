@@ -10,7 +10,7 @@ from solution_intelligence.sources import (
     KnowledgeBaseConnector,
     SapConnector,
     SharePointConnector,
-    TicketConnector,
+    ServiceDeskConnector,
     load_entries,
     load_filtered,
 )
@@ -20,7 +20,7 @@ __all__ = [
     "KnowledgeBaseConnector",
     "SapConnector",
     "SharePointConnector",
-    "TicketConnector",
+    "ServiceDeskConnector",
     "load_entries",
     "load_filtered",
 ]
