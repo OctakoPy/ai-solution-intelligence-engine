@@ -44,6 +44,8 @@ class IncidentContext:
     error_code: str | None = None
     module: str | None = None
     environment: str | None = None
+    # The release the affected system is currently on, when known.
+    release: str | None = None
 
     def __bool__(self) -> bool:
         """True when the incident carries at least one structured signal."""
@@ -121,7 +123,7 @@ class ConfidenceScorer:
 
         >>> scorer = ConfidenceScorer()
         >>> entry = KnowledgeEntry(
-        ...     id="X", source_type="ticket", title="t", description="d",
+        ...     id="X", source_type="service_desk", title="t", description="d",
         ...     resolution="r", worked_count=(9, 9),
         ... )
         >>> scorer.score(entry, 0.9)
@@ -169,7 +171,7 @@ class ConfidenceScorer:
 
             >>> scorer = ConfidenceScorer()
             >>> entry = KnowledgeEntry(
-            ...     id="X", source_type="ticket", title="t", description="d",
+            ...     id="X", source_type="service_desk", title="t", description="d",
             ...     resolution="r", worked_count=(10, 10),
             ... )
             >>> parts = scorer.breakdown(entry, 0.8)
@@ -265,6 +267,11 @@ def rank_results(
     return _with_language_coverage(pool, top_k, index, query, context)
 
 
+# Languages a single English query should surface alongside the original.
+# Japanese is included because the delivery footprint is genuinely
+# multilingual, not only because the demo wanted a third language.
+_COVERED_LANGUAGES = ("bm", "zh", "ja")
+
 # Tokens too common to identify a specific record on their own.
 _COVERAGE_STOP = frozenset(
     {
@@ -303,6 +310,11 @@ def _same_issue(left: KnowledgeEntry, right: KnowledgeEntry) -> bool:
     the link is in the data rather than guessed: a Bahasa Malaysia or Chinese
     record matches an English one when their titles describe the same thing.
     """
+    if left.translation_of and left.translation_of == right.id:
+        return True
+    if right.translation_of and right.translation_of == left.id:
+        return True
+
     pairs = (
         (left.english_title, right.title),
         (right.english_title, left.title),
@@ -348,15 +360,60 @@ def _with_language_coverage(
         return result
     scorer = ConfidenceScorer()
 
+    strongest = result[0]
+    shown_ids = {c.entry.id for c in result}
+
+    # An English question should not be answered with a translated headline.
+    # A translated record carries the English original alongside it and can
+    # out-score it on the English text, but opening the results on a Japanese
+    # card for an English query reads as a fault rather than as coverage.
+    if (strongest.entry.language or "en") != "en":
+        already_visible = next(
+            (
+                c
+                for c in result
+                if (c.entry.language or "en") == "en"
+                and _same_issue(strongest.entry, c.entry)
+            ),
+            None,
+        )
+        if already_visible is not None:
+            promoted = already_visible
+        else:
+            english_sibling = next(
+                (
+                    entry
+                    for entry in index.entries
+                    if (entry.language or "en") == "en"
+                    and entry.id not in shown_ids
+                    and _same_issue(strongest.entry, entry)
+                ),
+                None,
+            )
+            promoted = None
+            if english_sibling is not None:
+                similarity = index.similarity_to(english_sibling.id, query)
+                promoted = RetrievedSolution(
+                    entry=english_sibling,
+                    score=round(similarity, 3),
+                    confidence=scorer.score(english_sibling, similarity, context),
+                )
+        if promoted is not None:
+            result = [promoted] + [
+                c
+                for c in result
+                if c.entry.id not in (promoted.entry.id, strongest.entry.id)
+            ]
+            strongest = promoted
+            shown_ids = {c.entry.id for c in result}
+
     present = {
         (c.entry.language or "en") for c in result if (c.entry.language or "en") != "en"
     }
-    wanted = [lang for lang in ("bm", "zh") if lang not in present]
+    wanted = [lang for lang in _COVERED_LANGUAGES if lang not in present]
     if not wanted:
         return result
 
-    strongest = result[0]
-    shown_ids = {c.entry.id for c in result}
     siblings = [
         entry
         for entry in index.entries
@@ -370,11 +427,40 @@ def _with_language_coverage(
     # Deterministic order: the language order the demo expects, then id.
     siblings.sort(key=lambda e: (wanted.index(e.language or "en"), e.id))
 
-    keep = len(result) - len(siblings)
-    if keep < 1:
-        siblings = siblings[: len(result) - 1]
-    result = result[: max(keep, 1)]
     for entry in siblings:
+        if len(result) >= top_k:
+            # Make room without losing a language. Evicting the weakest card
+            # unconditionally used to drop the only Chinese record to make
+            # room for the Bahasa Malaysia one, so a query could advertise
+            # multilingual coverage and then show two of the same language.
+            # Only a redundant card, or an English one, may be displaced.
+            top_id = result[0].entry.id
+            counts: dict[str, int] = {}
+            for c in result:
+                counts[c.entry.language or "en"] = (
+                    counts.get(c.entry.language or "en", 0) + 1
+                )
+            evict = next(
+                (
+                    c
+                    for c in sorted(result, key=lambda c: c.confidence)
+                    # The strongest record is the answer the query asked for.
+                    # It is never displaced to make room for a translation of
+                    # itself, however many languages the surface can show.
+                    if c.entry.id != top_id
+                    and (
+                        (c.entry.language or "en") == "en"
+                        or counts.get(c.entry.language or "en", 0) > 1
+                    )
+                ),
+                None,
+            )
+            if evict is None:
+                # Every card is the sole representative of its language, so
+                # adding this one would cost more than it gained.
+                continue
+            counts[evict.entry.language or "en"] -= 1
+            result = [c for c in result if c.entry.id != evict.entry.id]
         # Score the promoted translation properly. Leaving it at zero made
         # the card render as a 0% match, which reads as a broken result
         # rather than the good translation it is.
@@ -386,7 +472,7 @@ def _with_language_coverage(
                 confidence=scorer.score(entry, similarity, context),
             )
         )
-    return result
+    return result[:top_k]
 
 
 def _normalize(value: str | None) -> str:

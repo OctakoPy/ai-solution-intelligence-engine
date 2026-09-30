@@ -292,6 +292,7 @@ def merge_context(
         module=supplied.get("module") or (existing.module if existing else None),
         environment=supplied.get("environment")
         or (existing.environment if existing else None),
+        release=supplied.get("release") or (existing.release if existing else None),
     )
 
 

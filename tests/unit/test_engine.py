@@ -16,7 +16,11 @@ from solution_intelligence.retrieval import (
     SIGNAL_WEIGHTS,
     matched_signals,
 )
-from solution_intelligence.sources import TicketConnector, load_entries, load_filtered
+from solution_intelligence.sources import (
+    ServiceDeskConnector,
+    load_entries,
+    load_filtered,
+)
 import solution_intelligence.analytics as engine_analytics
 
 
@@ -72,9 +76,9 @@ def test_from_dict_roundtrip():
 
 def test_load_entries_and_connectors():
     entries = load_entries(path="data/knowledge.json")
-    tickets = TicketConnector().fetch(entries)
-    assert tickets
-    assert all(e.source_type == "ticket" for e in tickets)
+    incidents = ServiceDeskConnector().fetch(entries)
+    assert incidents
+    assert all(e.source_type == "service_desk" for e in incidents)
 
 
 def test_load_filtered_balanced():
@@ -99,10 +103,10 @@ def test_load_filtered_has_no_duplicates(max_total):
 def test_load_filtered_keeps_every_source_when_budget_allows():
     entries = load_filtered(path="data/knowledge.json", max_total=20)
     assert {entry.source_type for entry in entries} == {
-        "ticket",
-        "sap_note",
-        "sharepoint_doc",
-        "kb_article",
+        "service_desk",
+        "sap",
+        "sharepoint",
+        "knowledge_base",
     }
 
 
@@ -190,9 +194,11 @@ def test_model_multilingual_fields():
 def test_dataset_has_multilingual_entries():
     entries = load_entries(path="data/knowledge.json")
     non_en = [e for e in entries if e.language != "en"]
-    assert len(non_en) == 6
+    languages = {e.language for e in non_en}
+    assert languages == {"bm", "zh", "ja"}
+    # Three each for Bahasa Malaysia and Chinese, six for Japanese.
+    assert len(non_en) == 12
     for e in non_en:
-        assert e.language in ("bm", "zh")
         assert e.english_title and e.english_description and e.english_resolution
 
 

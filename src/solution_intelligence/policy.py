@@ -1,10 +1,10 @@
 """The one abstain policy shared by every surface.
 
-"Knows when not to guess": when evidence is weak, the engine changes the
-action instead of inventing certainty. This module is the single source of
-truth for that behavior — the same thresholds decide, for the same hit,
-whether Find a Solution, Chat, and the raw API present a confident fix or
-a next-best action.
+"Check not satisfied": when evidence is weak, the engine changes the
+action instead of inventing certainty, and says which check failed. This
+module is the single source of truth for that behavior — the same thresholds
+decide, for the same hit, whether Find a Solution, Chat, and the raw API
+present a confident fix or a next-best action.
 
 The values live here (not in chat, not in eval) so the pilot evaluation in
 :mod:`solution_intelligence.evaluate` and the API layer can mirror exactly
@@ -223,6 +223,34 @@ _SUBJECTS: dict[str, tuple[str, ...]] = {
         "delivery failed",
         "stock",
         "delivery",
+        # The vocabulary an AMS consultant actually uses. Without these the
+        # gate reads "production order will not create" as naming no system
+        # at all and declines a record that is a perfect match.
+        "production order",
+        "planned order",
+        "process order",
+        "material master",
+        "master data",
+        "bill of materials",
+        "bom",
+        "mrp",
+        "warehouse",
+        "outbound delivery",
+        "inbound delivery",
+        "plant",
+        "production planning",
+        "account determination",
+        "component allocation",
+        "valuation area",
+        "account assignment",
+        "movement type",
+        "reservation",
+        "delivery note",
+        "packing list",
+        "inspection lot",
+        "sampling procedure",
+        "quality management",
+        "quality inspection",
     ),
     "sap_fiori": ("fiori", "launchpad", "launch pad", "tile", "approve request"),
     "sap_workflow": (
@@ -242,6 +270,13 @@ _SUBJECTS: dict[str, tuple[str, ...]] = {
         "scheduled job",
         "scheduler",
         "nightly job",
+        "background job",
+        "nightly",
+        "job step",
+        "sm36",
+        "sm50",
+        "aborts",
+        "aborting",
     ),
     "sap_gui_performance": (
         "sap gui",
@@ -259,6 +294,23 @@ _SUBJECTS: dict[str, tuple[str, ...]] = {
         "logistics",
         "edi",
         "message log",
+        # Shop-floor and plant integration: the terms an AMS engineer uses
+        # for a line that has stopped talking to SAP.
+        "opc ua",
+        "plc",
+        "opc",
+        "mes",
+        "shop floor",
+        "shopfloor",
+        "line plc",
+        "digital manufacturing",
+        "manufacturing cloud",
+        "dmc",
+        "confirmation not posting",
+        "queue stuck",
+        "ipc queue",
+        "downtime not reported",
+        "endpoints",
     ),
     "sap_addons": (
         "add-on",
@@ -681,16 +733,16 @@ def _ask_context_payload(
     if missing:
         fields = ", ".join(m.replace("_", " ") for m in missing)
         message = (
-            "Not confident enough to recommend a fix. Confirm the "
-            f"{fields} of the incident, then search again."
+            f"Check not satisfied: missing {fields}. Supply the incident "
+            "detail and the check runs again."
         )
     else:
         # Context is complete yet confidence is still mid-band: do not ask
         # again for fields the user already supplied.
         message = (
-            "Not confident enough to recommend a fix, even with the full "
-            "incident context. Review the nearest matches with a "
-            "specialist before applying anything."
+            "Check not satisfied even with the full incident context. "
+            "Review the nearest matches with a specialist before applying "
+            "anything."
         )
     return {
         "action": "ask_context",
@@ -713,14 +765,15 @@ def _escalate_payload(top: RetrievedSolution | None) -> dict[str, Any]:
     if top is not None and top.entry is not None:
         nearest = {"id": top.entry.id, "title": top.entry.title}
         message = (
-            "Nothing in the knowledge base matches this closely enough to "
-            "recommend. Escalate to a subject-matter expert rather than "
+            "Check not satisfied: no record matches this closely enough to "
+            "recommend. Handing to a subject-matter expert rather than "
             "applying a guess."
         )
     else:
         message = (
-            "No matching historical record exists for this issue. Escalate "
-            "to a subject-matter expert for manual handling."
+            "Check not satisfied: no matching historical record exists for "
+            "this issue. Handing to a subject-matter expert for manual "
+            "handling."
         )
     return {"action": "escalate_sme", "message": message, "nearest_record": nearest}
 
