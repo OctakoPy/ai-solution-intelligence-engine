@@ -8,8 +8,8 @@ export interface NextBestActionBannerProps {
 }
 
 const TITLE: Record<NextBestAction["action"], string> = {
-  ask_context: "Not confident enough to guess — add context",
-  escalate_sme: "Knows when not to guess — escalate",
+  ask_context: "Check not satisfied — supply the incident detail",
+  escalate_sme: "Check not satisfied — handing to a specialist",
 };
 
 export function NextBestActionBanner({

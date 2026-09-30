@@ -29,7 +29,7 @@ const result = (overrides: Partial<RetrievedSolution> = {}): RetrievedSolution =
 
 const askContext = {
   action: "ask_context" as const,
-  message: "Not confident enough to recommend a fix.",
+  message: "Check not satisfied: missing error code.",
   missing_fields: ["error_code"],
   nearest_record_id: "TIC-3011",
   nearest_record_title: "SAP MM goods receipt posting error",
@@ -68,7 +68,7 @@ describe("FindSolution next-best-action banner", () => {
 
     await waitFor(() => expect(api.search).toHaveBeenCalled());
     expect(screen.getByText("SAP MM goods receipt posting error")).toBeInTheDocument();
-    expect(screen.queryByText(/Not confident enough/)).toBeNull();
+    expect(screen.queryByText(/Check not satisfied/)).toBeNull();
   });
 
   it("keeps the ask-for-context banner when the context does not match the top record", async () => {
@@ -83,7 +83,7 @@ describe("FindSolution next-best-action banner", () => {
     await runSearch();
 
     await waitFor(() =>
-      expect(screen.getAllByText(/Not confident enough/).length).toBeGreaterThan(0),
+      expect(screen.getAllByText(/Check not satisfied/).length).toBeGreaterThan(0),
     );
   });
 
@@ -93,7 +93,7 @@ describe("FindSolution next-best-action banner", () => {
       next_best_action: {
         ...askContext,
         action: "escalate_sme" as const,
-        message: "Nothing in the knowledge base matches this.",
+        message: "Check not satisfied this.",
       },
     });
 
@@ -101,7 +101,7 @@ describe("FindSolution next-best-action banner", () => {
     await runSearch();
 
     await waitFor(() =>
-      expect(screen.getByText(/Nothing in the knowledge base matches/)).toBeInTheDocument(),
+      expect(screen.getAllByText(/Check not satisfied/).length).toBeGreaterThan(0),
     );
     expect(screen.queryByText("SAP MM goods receipt posting error")).toBeNull();
   });

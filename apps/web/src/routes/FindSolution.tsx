@@ -23,6 +23,7 @@ export default function FindSolution() {
   const [errorCode, setErrorCode] = useState("");
   const [module, setModule] = useState("");
   const [environment, setEnvironment] = useState("");
+  const [release, setRelease] = useState("");
   const [showIncident, setShowIncident] = useState(false);
   const [activeContext, setActiveContext] = useState<SearchContext | null>(null);
   const [results, setResults] = useState<RetrievedSolution[]>([]);
@@ -45,6 +46,7 @@ export default function FindSolution() {
     if (errorCode.trim()) ctx.error_code = errorCode.trim();
     if (module.trim()) ctx.module = module.trim();
     if (environment.trim()) ctx.environment = environment.trim();
+    if (release.trim()) ctx.release = release.trim();
     return Object.keys(ctx).length > 0 ? ctx : undefined;
   };
 
@@ -149,11 +151,23 @@ export default function FindSolution() {
                 className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-600"
               />
             </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
+              Release
+              <input
+                type="text"
+                value={release}
+                onChange={(e) => setRelease(e.target.value)}
+                placeholder="2503"
+                aria-label="Release"
+                className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-600"
+              />
+            </label>
             <button
               onClick={() => {
                 setErrorCode("");
                 setModule("");
                 setEnvironment("");
+                setRelease("");
               }}
               className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100"
             >

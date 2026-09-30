@@ -3,8 +3,9 @@ import { useUIStore } from "@/stores/ui";
 import { usePlaybackStore } from "@/stores/playback";
 import { fetchViews, ingest } from "@/lib/api";
 import { usePlaybackMachine, useFormatTime } from "@/components/pipeline/usePlaybackMachine";
-import { CheckCircle, CircleAlert, CircleX, Play, Loader2 } from "lucide-react";
+import { CheckCircle, CircleAlert, CircleX, Play, Loader2, ShieldCheck } from "lucide-react";
 import { LanguageBadge } from "@/components/ui/language-badge";
+import type { View } from "@/lib/types";
 
 function CheckIcon({ result }: { result: "pass" | "flag" | "reject" }) {
   if (result === "pass") return <CheckCircle className="h-5 w-5 text-green-600" />;
@@ -16,6 +17,44 @@ function resultLabel(result: "pass" | "flag" | "reject") {
   if (result === "pass") return "Passed";
   if (result === "flag") return "Review";
   return "Rejected";
+}
+
+/**
+ * What was kept out of the index, and why.
+ *
+ * The filtering already happens at ingest. Without this the work is invisible,
+ * so the exclusion reads as "records we did not have" rather than as a
+ * deliberate control over what is allowed to be searched.
+ */
+function ExclusionPanel({ views }: { views: View[] }) {
+  const excluded = new Map<string, number>();
+  for (const v of views) {
+    if (v.outcome !== "rejected") continue;
+    excluded.set(v.reason, (excluded.get(v.reason) ?? 0) + 1);
+  }
+  if (excluded.size === 0) return null;
+  const rows = [...excluded.entries()].sort((a, b) => b[1] - a[1]);
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card">
+      <div className="flex items-center gap-2">
+        <ShieldCheck className="h-5 w-5 text-green-600" />
+        <h2 className="text-lg font-semibold text-gray-900">Kept out of the search index</h2>
+      </div>
+      <p className="mt-1 text-sm text-gray-500">
+        These records were excluded during ingestion, so they can never be retrieved or quoted as a
+        recommendation.
+      </p>
+      <ul className="mt-3 space-y-1">
+        {rows.map(([reason, count]) => (
+          <li key={reason} className="flex items-baseline justify-between gap-4 text-base">
+            <span className="text-gray-700">{reason}</span>
+            <span className="font-semibold text-gray-900">{count}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function Pipeline() {
@@ -45,9 +84,11 @@ function Pipeline() {
   useEffect(() => {
     if (views.length === 0 && status === "idle") {
       ingest(datasetSize).then(() => {
-        fetchViews(datasetSize).then(setViews).catch((e) => {
-          console.error("Failed to fetch views:", e);
-        });
+        fetchViews(datasetSize)
+          .then(setViews)
+          .catch((e) => {
+            console.error("Failed to fetch views:", e);
+          });
       });
       lastIngestedSize.current = datasetSize;
     }
@@ -59,9 +100,11 @@ function Pipeline() {
       lastIngestedSize.current = datasetSize;
       reset();
       ingest(datasetSize).then(() => {
-        fetchViews(datasetSize).then(setViews).catch((e) => {
-          console.error("Failed to fetch views:", e);
-        });
+        fetchViews(datasetSize)
+          .then(setViews)
+          .catch((e) => {
+            console.error("Failed to fetch views:", e);
+          });
       });
     }
   }, [datasetSize, reset, setViews]);
@@ -80,9 +123,7 @@ function Pipeline() {
       {isReady && status === "idle" && (
         <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
           <div className="text-4xl">▶️</div>
-          <h2 className="mt-3 text-xl font-bold text-gray-900">
-            Execute Pipeline
-          </h2>
+          <h2 className="mt-3 text-xl font-bold text-gray-900">Execute Pipeline</h2>
           <button
             onClick={play}
             className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-base font-semibold text-white hover:bg-blue-700"
@@ -137,11 +178,11 @@ function Pipeline() {
         </div>
       )}
 
+      <ExclusionPanel views={views} />
+
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Recent Processed Records
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900">Recent Processed Records</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-base">
@@ -168,9 +209,7 @@ function Pipeline() {
                 recent
                   .slice()
                   .reverse()
-                  .map((row, i) => (
-                    <RowItem key={i} row={row} />
-                  ))
+                  .map((row, i) => <RowItem key={i} row={row} />)
               )}
             </tbody>
           </table>
@@ -183,7 +222,12 @@ function Pipeline() {
 function RowItem({
   row,
 }: {
-  row: { source: string; title: string; status: "added" | "rejected" | "flagged"; completedAt: number };
+  row: {
+    source: string;
+    title: string;
+    status: "added" | "rejected" | "flagged";
+    completedAt: number;
+  };
 }) {
   const now = Date.now();
   return (
@@ -227,10 +271,18 @@ function PlayingView({
 }: PlayingViewProps) {
   const stageProgress = usePlaybackStore((s) => s.stageProgress);
 
-  const stageCards: Array<{ label: string; revealed: boolean; result?: "pass" | "flag" | "reject" }> = [
+  const stageCards: Array<{
+    label: string;
+    revealed: boolean;
+    result?: "pass" | "flag" | "reject";
+  }> = [
     { label: "Stage 1\nStructural", revealed: stageProgress >= 1, result: view.checks[0]?.result },
     { label: "AI Judge\nQuality", revealed: stageProgress >= 2, result: view.checks[1]?.result },
-    { label: "Duplicate\nSimilarity", revealed: stageProgress >= 3, result: view.checks[2]?.result },
+    {
+      label: "Duplicate\nSimilarity",
+      revealed: stageProgress >= 3,
+      result: view.checks[2]?.result,
+    },
   ];
   const checkScores: Array<{
     label: string;
@@ -257,18 +309,10 @@ function PlayingView({
       score: view.checks[2]?.score,
     },
     {
-      label: view.outcome === "added"
-        ? "Added"
-        : view.outcome === "flagged"
-          ? "Flagged"
-          : "Rejected",
+      label:
+        view.outcome === "added" ? "Added" : view.outcome === "flagged" ? "Flagged" : "Rejected",
       show: stageProgress >= 4,
-      result:
-        view.outcome === "added"
-          ? "pass"
-          : view.outcome === "flagged"
-            ? "flag"
-            : "reject",
+      result: view.outcome === "added" ? "pass" : view.outcome === "flagged" ? "flag" : "reject",
       score: null,
     },
   ];
@@ -281,26 +325,21 @@ function PlayingView({
             {view.source_icon} <b>{view.source_label}</b>
           </span>
           <span className="flex items-center gap-2 text-sm text-gray-500">
-            <LanguageBadge language={view.language} />
-            #{view.id}
+            <LanguageBadge language={view.language} />#{view.id}
           </span>
         </div>
         <h2 className="mt-2 text-xl font-bold text-gray-900">{view.title}</h2>
         <div className="mt-1 text-sm text-gray-500">
           Category: {view.category} · {view.date}
         </div>
-        <div className="mt-3 text-sm font-bold uppercase text-gray-500">
-          Description
-        </div>
+        <div className="mt-3 text-sm font-bold uppercase text-gray-500">Description</div>
         <div className="mt-1 min-h-[44px] text-base text-gray-900">
           {typedDescription}
           {descCaretVisible && (
             <span className="ml-0.5 inline-block h-4 w-2 align-text-bottom bg-blue-600 animate-blink" />
           )}
         </div>
-        <div className="mt-3 text-sm font-bold uppercase text-gray-500">
-          Resolution
-        </div>
+        <div className="mt-3 text-sm font-bold uppercase text-gray-500">Resolution</div>
         <div className="mt-1 min-h-[44px] text-base text-gray-900">
           {typedResolution}
           {resoCaretVisible && (
@@ -397,11 +436,7 @@ function PlayingView({
                           : "text-transparent"
                       }`}
                     >
-                      {done
-                        ? score != null
-                          ? `${Math.round(score * 100)}%`
-                          : "—"
-                        : "0%"}
+                      {done ? (score != null ? `${Math.round(score * 100)}%` : "—") : "0%"}
                     </span>
                   </div>
                 </div>

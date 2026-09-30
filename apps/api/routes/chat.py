@@ -41,6 +41,7 @@ def _to_context(req: IncidentContext | None) -> CoreContext | None:
         error_code=req.error_code,
         module=req.module,
         environment=req.environment,
+        release=req.release,
     )
 
 
@@ -127,9 +128,9 @@ def _build_assistant_turn(
                 return f"{next_best_action.message} {ruled_out}"
             return next_best_action.message
         return (
-            "I couldn't find an appropriate match in the available records for "
-            "that. Try describing the issue differently, or escalate to a "
-            "subject-matter expert."
+            "Check not satisfied: I couldn't find an appropriate match in the "
+            "available records for that. Try describing the issue differently, "
+            "or hand it to a subject-matter expert."
         )
     top = candidates[0]
     ruled_out = f"{ruled_out} Here is the next best match instead." if ruled_out else ""

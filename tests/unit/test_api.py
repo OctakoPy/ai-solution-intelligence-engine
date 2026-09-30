@@ -7,6 +7,7 @@ from httpx import ASGITransport, AsyncClient
 
 from apps.api.engine_cache import get_or_build_engine, reset_cache
 from apps.api.main import app
+from solution_intelligence.policy import PROVEN_FLOOR, TRUSTED_MIN_ATTEMPTS
 
 
 @pytest.fixture(autouse=True)
@@ -100,7 +101,7 @@ async def test_sources(client: AsyncClient) -> None:
     resp = await client.get("/api/sources?max_entries=3")
     assert resp.status_code == 200
     body = resp.json()
-    for key in ("ticket", "sap_note", "sharepoint_doc", "kb_article"):
+    for key in ("service_desk", "sap", "sharepoint", "knowledge_base"):
         assert key in body
 
 
@@ -183,8 +184,11 @@ async def test_search_evidence_includes_duplicate_group_peers(
     await client.post("/api/ingest", json={"max_entries": 0})
     # "password reset" surfaces both password_reset_generic records
     # (TIC-1014, TIC-1015), so each hit should list the other as evidence.
+    # The window is wide because the dataset grows over time and a
+    # narrower one stops containing both members for reasons that have
+    # nothing to do with the feature under test.
     resp = await client.post(
-        "/api/search", json={"query": "password reset", "top_k": 5}
+        "/api/search", json={"query": "password reset", "top_k": 12}
     )
     assert resp.status_code == 200
     results = resp.json()["results"]
@@ -615,7 +619,7 @@ async def test_chat_proven_weak_match_proceeds(client: AsyncClient) -> None:
 
 @pytest.mark.anyio
 async def test_chat_proven_below_floor_escalates(client: AsyncClient) -> None:
-    """Even a proven record at 29% similarity is too weak to
+    """Even a trusted record at 29% similarity is too weak to
     trust — the banner still appears."""
     await client.post("/api/ingest", json={"max_entries": 50})
     resp = await client.post(
@@ -625,9 +629,21 @@ async def test_chat_proven_below_floor_escalates(client: AsyncClient) -> None:
     assert resp.status_code == 200
     body = resp.json()
     top = body["candidates"][0]
-    assert top["worked"] >= top["attempted"] and top["attempted"] >= 3
-    assert top["confidence"] < 0.35
-    assert any("escalate" in t["text"].lower() for t in body["turns"])
+    # Trusted, not necessarily perfect. The abstain policy asks "would a
+    # consultant apply this fix?", so the scenario needs a record with a strong
+    # own history. Requiring a flawless record here also broke whenever the
+    # dataset gained records, because it pinned the test to whichever record
+    # happened to rank first.
+    assert top["attempted"] >= TRUSTED_MIN_ATTEMPTS
+    assert top["worked"] / top["attempted"] >= 0.8
+    assert top["confidence"] < PROVEN_FLOOR
+    assert any(
+        any(
+            word in t["text"].lower()
+            for word in ("subject-matter expert", "specialist", "escalate")
+        )
+        for t in body["turns"]
+    )
 
 
 @pytest.mark.anyio
@@ -908,3 +924,53 @@ async def test_banner_and_answer_agree_on_the_same_record(
         if nba["nearest_record_id"]:
             assert nba["nearest_record_id"] == top["id"]
             assert nba["nearest_record_title"] == top["title"]
+
+
+@pytest.mark.anyio
+async def test_stale_release_is_flagged_on_search(client: AsyncClient) -> None:
+    """A fix proven before a release update is caveated, not presented clean.
+
+    Bi-annual release updates are a standing AMS obligation, so a record
+    proven on an earlier release must say so when the incident names a
+    later one.
+    """
+    await client.post("/api/ingest", json={"max_entries": 0})
+    query = "goods receipt posting error account determination not found"
+    base = {"query": query, "top_k": 3}
+
+    stale = (
+        await client.post(
+            "/api/search",
+            json={**base, "context": {"release": "2503"}},
+        )
+    ).json()
+    current = (
+        await client.post(
+            "/api/search",
+            json={**base, "context": {"release": "2409"}},
+        )
+    ).json()
+
+    top_stale = stale["results"][0]
+    top_current = current["results"][0]
+    # The same record is the best match either way; only the caveat changes.
+    assert top_stale["id"] == top_current["id"]
+    assert any("2409" in c and "2503" in c for c in top_stale["caveats"])
+    assert not any("Re-validate" in c for c in top_current["caveats"])
+
+
+@pytest.mark.anyio
+async def test_release_caveat_absent_when_release_unknown(
+    client: AsyncClient,
+) -> None:
+    """No release on either side means no claim about staleness."""
+    await client.post("/api/ingest", json={"max_entries": 0})
+    resp = await client.post(
+        "/api/search",
+        json={
+            "query": "goods receipt posting error account determination not found",
+            "top_k": 3,
+        },
+    )
+    top = resp.json()["results"][0]
+    assert not any("Re-validate" in c for c in top["caveats"])

@@ -1,13 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  Database,
-  CheckCircle,
-  XCircle,
-  Timer,
-  Flag,
-  Clock,
-  Brain,
-} from "lucide-react";
+import { Database, CheckCircle, XCircle, Timer, Flag, Clock, Brain } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { DonutChart } from "@/components/ui/donut-chart";
 import { BarList } from "@/components/ui/bar-list";
@@ -42,9 +34,7 @@ const RECENT_COLUMNS = [
   {
     key: "time_label" as const,
     header: "Time",
-    render: (row: OverviewRecentRow) => (
-      <span className="text-gray-500">{row.time_label}</span>
-    ),
+    render: (row: OverviewRecentRow) => <span className="text-gray-500">{row.time_label}</span>,
   },
 ];
 
@@ -91,14 +81,9 @@ export default function Overview() {
 
   return (
     <div>
-      <PageHeader
-        title="Overview"
-        subtitle="Ingest. Understand. Retrieve. Respond."
-      />
+      <PageHeader title="Overview" subtitle="Ingest. Understand. Retrieve. Respond." />
 
-      {isLoading && (
-        <div className="text-base text-gray-500">Loading metrics...</div>
-      )}
+      {isLoading && <div className="text-base text-gray-500">Loading metrics...</div>}
 
       {isError && (
         <div className="rounded-lg border border-red-500 bg-red-50 p-4 text-base text-red-700">
@@ -120,9 +105,7 @@ export default function Overview() {
               label="Added to Knowledge Base"
               value={data.added.toLocaleString()}
               delta={
-                data.processed > 0
-                  ? `${((data.added / data.processed) * 100).toFixed(1)}%`
-                  : "0%"
+                data.processed > 0 ? `${((data.added / data.processed) * 100).toFixed(1)}%` : "0%"
               }
             />
             <StatCard
@@ -146,9 +129,7 @@ export default function Overview() {
           <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-5 shadow-card">
             <div className="mb-3 flex items-center gap-2">
               <Flag className="h-5 w-5 text-amber-600" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                Flagged for Human Review
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900">Flagged for Human Review</h2>
               <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-sm font-semibold text-amber-700">
                 {data.flagged.length}
               </span>
@@ -156,9 +137,7 @@ export default function Overview() {
             <DataTable
               columns={FLAG_COLUMNS}
               rows={data.flagged as OverviewFlaggedRow[]}
-              empty={
-                <span className="text-gray-500">No flagged items</span>
-              }
+              empty={<span className="text-gray-500">No flagged items</span>}
             />
           </div>
 
@@ -180,9 +159,7 @@ export default function Overview() {
 
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card lg:col-span-4">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Top Categories
-                </h2>
+                <h2 className="text-lg font-semibold text-gray-900">Top Categories</h2>
               </div>
               <BarList
                 items={data.top_categories.map((c) => ({
@@ -193,9 +170,7 @@ export default function Overview() {
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card lg:col-span-4">
-              <h2 className="mb-3 text-lg font-semibold text-gray-900">
-                Before vs After (Impact)
-              </h2>
+              <h2 className="mb-3 text-lg font-semibold text-gray-900">Before vs After (Impact)</h2>
               <div className="flex flex-col gap-4">
                 {data.before_after.map((row) => (
                   <ImpactRow
@@ -213,12 +188,10 @@ export default function Overview() {
           <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-card">
             <div className="mb-3 flex items-center gap-2">
               <Brain className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                Resolution Memory
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900">Resolution Memory</h2>
               <span className="text-sm text-gray-400">
                 confirmed outcomes feeding the learning loop
-              </span>
+              </span>{" "}
             </div>
             {data.memory_stats && data.memory_stats.total_outcomes > 0 ? (
               <>
@@ -243,47 +216,46 @@ export default function Overview() {
                       <div className="text-3xl font-bold text-gray-900">
                         {data.memory_stats.total_outcomes}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Outcomes recorded
-                      </div>
+                      <div className="text-sm text-gray-500">Outcomes recorded</div>
                     </div>
                     <div>
                       <div className="text-3xl font-bold text-green-600">
                         {Math.round(data.memory_stats.success_rate * 100)}%
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Outcome success rate
+                      <div className="text-sm text-gray-500">First-time fix</div>
+                      <div className="text-xs text-gray-400">
+                        of recommended fixes confirmed working
                       </div>
                     </div>
                     <div>
                       <div className="text-3xl font-bold text-gray-900">
                         {data.memory_stats.entries_learned}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Entries learned
-                      </div>
+                      <div className="text-sm text-gray-500">Entries learned</div>
                     </div>
                     <div>
                       <div className="text-3xl font-bold text-blue-600">
                         {data.memory_stats.proven_fixes}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Proven fixes
-                      </div>
+                      <div className="text-sm text-gray-500">Proven fixes</div>
                     </div>
                   </div>
                 </div>
                 {data.memory_stats.last_outcome_at && (
                   <div className="mt-3 text-sm text-gray-500">
-                    Last outcome:{" "}
-                    {relativeTime(data.memory_stats.last_outcome_at)}
+                    Last outcome: {relativeTime(data.memory_stats.last_outcome_at)}
                   </div>
                 )}
+                <div className="mt-3 text-sm text-gray-500">
+                  First-time fix is measured from confirmed outcomes. Mean time to resolve and SLA
+                  attainment need response targets, so they are not shown here — the demo dataset
+                  has no per-ticket clock.
+                </div>
               </>
             ) : (
               <p className="text-base text-gray-500">
-                No outcomes recorded yet — confirm a fix from Find a Solution
-                to start the learning loop.
+                No outcomes recorded yet — confirm a fix from Find a Solution to start the learning
+                loop.
               </p>
             )}
           </div>
@@ -291,9 +263,7 @@ export default function Overview() {
           <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-card">
             <div className="mb-3 flex items-center gap-2">
               <Clock className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                Resolution Time by Category
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900">Resolution Time by Category</h2>
             </div>
             <div className="grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
               {data.resolution_by_category.map((row) => (
@@ -302,18 +272,14 @@ export default function Overview() {
                   className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2"
                 >
                   <span className="text-sm text-gray-600">{row.name}</span>
-                  <span className="text-sm font-semibold text-gray-900">
-                    {row.avg_time}
-                  </span>
+                  <span className="text-sm font-semibold text-gray-900">{row.avg_time}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-card">
-            <h2 className="mb-3 text-lg font-semibold text-gray-900">
-              Recent Activity
-            </h2>
+            <h2 className="mb-3 text-lg font-semibold text-gray-900">Recent Activity</h2>
             <DataTable
               columns={RECENT_COLUMNS}
               rows={data.recent}

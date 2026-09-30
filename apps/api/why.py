@@ -108,7 +108,33 @@ def _build_caveats(
         mismatched = mismatched_signals(hit.entry, context)
         fields = " / ".join(m.replace("_", " ") for m in mismatched)
         caveats.append(_CONTEXT_TRAP_CAVEAT.format(fields=fields))
+    caveats.extend(_release_caveats(hit, context))
     return caveats
+
+
+def _release_caveats(
+    hit: RetrievedSolution,
+    context: IncidentContext | None,
+) -> list[str]:
+    """Warn when a recommendation predates the release it is being used on.
+
+    Bi-annual release updates are a standing AMS obligation, and a fix proven
+    before an upgrade is not automatically still correct after it. The engine
+    can check this cheaply because the record carries the release it was proven
+    on, so it says so rather than presenting a pre-upgrade fix with total
+    confidence. Silent when the record and the system are on the same release,
+    or when the release is unknown on either side.
+    """
+    if context is None:
+        return []
+    target = (context.release or "").strip()
+    proven = (hit.entry.release or "").strip()
+    if not target or not proven or target == proven:
+        return []
+    return [
+        f"Proven on release {proven}; the system is on {target}. Re-validate "
+        "this fix after the release update before applying it."
+    ]
 
 
 def confidence_note(hit: RetrievedSolution) -> str:

@@ -29,6 +29,7 @@ def _to_context(req: IncidentContext | None) -> CoreContext | None:
         error_code=req.error_code,
         module=req.module,
         environment=req.environment,
+        release=req.release,
     )
 
 

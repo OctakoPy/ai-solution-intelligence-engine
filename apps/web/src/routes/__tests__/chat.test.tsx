@@ -97,14 +97,14 @@ describe("Chat reply rendering", () => {
         { role: "user", text: "q", timestamp: null },
         {
           role: "assistant",
-          text: "Not confident enough to recommend a fix.",
+          text: "Check not satisfied: missing error code.",
           timestamp: null,
         },
       ],
       candidates: [candidate()],
       next_best_action: {
         action: "ask_context",
-        message: "Not confident enough to recommend a fix.",
+        message: "Check not satisfied: missing error code.",
         missing_fields: ["error_code"],
         nearest_record_id: "TIC-1001",
         nearest_record_title: "User cannot access FI reports in SAP",
@@ -115,7 +115,7 @@ describe("Chat reply rendering", () => {
     await send("q");
 
     await waitFor(() =>
-      expect(screen.getAllByText(/Not confident enough/).length).toBeGreaterThan(0),
+      expect(screen.getAllByText(/Check not satisfied/).length).toBeGreaterThan(0),
     );
     expect(screen.queryByText("TIC-1001")).toBeNull();
     expect(screen.queryByRole("button", { name: /Show sources/ })).toBeNull();
