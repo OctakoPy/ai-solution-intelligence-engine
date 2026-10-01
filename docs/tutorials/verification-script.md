@@ -23,7 +23,7 @@ just dev                              # API on :8004, web on :5179
 
 Open **http://localhost:5179**.
 
-1. In the left sidebar, set dataset size to **Full (78)**.
+1. The whole corpus is loaded automatically — there is nothing to select.
 2. **Reset the learning log (recommended before a demo):** delete
    `data/resolution_memory.json` and restart `just dev`. The log is runtime
    learning data (gitignored), so a fresh start makes Section 5 exact:

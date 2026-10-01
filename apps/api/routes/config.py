@@ -4,13 +4,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from apps.api.engine_cache import DATASET_OPTIONS, GPU_LEVELS
-from apps.api.models import (
-    DatasetSize,
-    DatasetSizesResponse,
-    GpuLevelResponse,
-    HealthResponse,
-)
+from apps.api.engine_cache import GPU_LEVELS
+from apps.api.models import GpuLevelResponse, HealthResponse
 
 router = APIRouter(tags=["config"])
 
@@ -19,16 +14,6 @@ router = APIRouter(tags=["config"])
 async def health() -> HealthResponse:
     """Liveness probe."""
     return HealthResponse()
-
-
-@router.get("/api/dataset/sizes", response_model=DatasetSizesResponse)
-async def dataset_sizes() -> DatasetSizesResponse:
-    """List available dataset sizes for the demo."""
-    return DatasetSizesResponse(
-        options=[
-            DatasetSize(label=label, size=size) for label, size in DATASET_OPTIONS
-        ],
-    )
 
 
 @router.get("/api/gpu/levels", response_model=GpuLevelResponse)

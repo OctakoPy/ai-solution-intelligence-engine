@@ -1,5 +1,4 @@
-import { useEffect, useRef } from "react";
-import { useUIStore } from "@/stores/ui";
+import { useEffect } from "react";
 import { usePlaybackStore } from "@/stores/playback";
 import { fetchViews, ingest } from "@/lib/api";
 import { usePlaybackMachine, useFormatTime } from "@/components/pipeline/usePlaybackMachine";
@@ -58,7 +57,6 @@ function ExclusionPanel({ views }: { views: View[] }) {
 }
 
 function Pipeline() {
-  const datasetSize = useUIStore((s) => s.datasetSize);
   const status = usePlaybackStore((s) => s.status);
   const views = usePlaybackStore((s) => s.views);
   const setViews = usePlaybackStore((s) => s.setViews);
@@ -77,37 +75,18 @@ function Pipeline() {
 
   usePlaybackMachine();
 
-  // Track the last dataset size we ingested to avoid infinite loops
-  const lastIngestedSize = useRef<number | null>(null);
-
-  // Initial ingestion when views are empty
+  // The corpus is fixed, so there is one ingestion and nothing to re-trigger.
   useEffect(() => {
     if (views.length === 0 && status === "idle") {
-      ingest(datasetSize).then(() => {
-        fetchViews(datasetSize)
-          .then(setViews)
-          .catch((e) => {
-            console.error("Failed to fetch views:", e);
-          });
-      });
-      lastIngestedSize.current = datasetSize;
-    }
-  }, [datasetSize, status, views.length, setViews]);
-
-  // Re-ingest when dataset size actually changes
-  useEffect(() => {
-    if (lastIngestedSize.current !== null && lastIngestedSize.current !== datasetSize) {
-      lastIngestedSize.current = datasetSize;
-      reset();
-      ingest(datasetSize).then(() => {
-        fetchViews(datasetSize)
+      ingest().then(() => {
+        fetchViews()
           .then(setViews)
           .catch((e) => {
             console.error("Failed to fetch views:", e);
           });
       });
     }
-  }, [datasetSize, reset, setViews]);
+  }, [status, views.length, setViews]);
 
   const view = views[currentIndex];
   const isReady = views.length > 0;
@@ -405,12 +384,14 @@ function PlayingView({
           <div className="flex gap-1">
             {checkScores.map(({ label, show, result, score }) => {
               const done = show;
+              // 400 is the fill step for each semantic ramp; 500 and above
+              // are the text steps and read as muddy bars.
               const color =
                 result === "pass"
-                  ? "bg-green-500"
+                  ? "bg-green-400"
                   : result === "flag"
-                    ? "bg-amber-500"
-                    : "bg-red-500";
+                    ? "bg-amber-400"
+                    : "bg-red-400";
               return (
                 <div key={label} className="min-w-0 flex-1">
                   <div

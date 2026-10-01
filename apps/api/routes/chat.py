@@ -6,7 +6,7 @@ from datetime import datetime
 
 from fastapi import APIRouter
 
-from apps.api.engine_cache import get_or_build_engine
+from apps.api.engine_cache import get_engine
 from apps.api.models import (
     ChatRespondRequest,
     ChatResponse,
@@ -162,7 +162,7 @@ def _build_assistant_turn(
 @router.post("/api/chat/start", response_model=ChatResponse)
 async def chat_start(req: ChatStartRequest) -> ChatResponse:
     """Start a new chat session with the engine agent."""
-    engine = get_or_build_engine(0)
+    engine = get_engine()
     context = _to_context(req.context)
     session = engine.agent.start(req.session_id, req.query, context=context)
     # The agent already returns the order it presents, so the session's
@@ -196,7 +196,7 @@ async def chat_start(req: ChatStartRequest) -> ChatResponse:
 @router.post("/api/chat/respond", response_model=ChatResponse)
 async def chat_respond(req: ChatRespondRequest) -> ChatResponse:
     """Send a follow-up message within an existing chat session."""
-    engine = get_or_build_engine(0)
+    engine = get_engine()
     rejected_titles_before: list[str] = []
     if req.session_id in engine.agent.sessions:
         rejected_titles_before = list(

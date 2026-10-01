@@ -34,14 +34,14 @@ for hit in engine.search("SAP FI report access denied authorization error", top_
     print(hit.entry.title, f"{hit.combined_score:.0%}")
 ```
 
-## Run the dataset sizes locally
+## Re-run ingestion locally
 
-The dashboard exposes a dataset-size selector (Debug 3 / Small 8 / Full 78)
-backed by the API. To re-process a different slice, restart the API after
-changing the selector, or pass a size directly:
+The application always loads the whole corpus, so there is no subset to
+choose. Ingestion runs once per process and is cached; restart the API to
+force a fresh run:
 
 ```bash
-curl -X POST http://localhost:8004/api/ingest -H "Content-Type: application/json" -d '{"max_entries": 78}'
+curl -X POST http://localhost:8004/api/ingest -H "Content-Type: application/json" -d '{}'
 ```
 
 ## Run the pilot evaluation

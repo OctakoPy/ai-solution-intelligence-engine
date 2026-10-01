@@ -2,49 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * No colour custom properties live here. The palette is defined once in
+ * `tailwind.config.ts`, and this file used to carry a second, parallel copy
+ * of thirteen of those values that nothing ever read - a drifting source of
+ * truth that shipped in the built CSS. `components.json` also sets
+ * `"cssVariables": false`, so the project is deliberately token-first.
+ */
 @layer base {
-  :root {
-    --navy-900: #0c172f;
-    --navy-700: #1a366b;
-    --blue-600: #175fee;
-    --blue-50: #eaf1ff;
-    --green-600: #0e9354;
-    --red-500: #e5484d;
-    --red-soft: #f4a6ac;
-    --amber-500: #fdb84e;
-    --gray-900: #111827;
-    --gray-500: #6b7280;
-    --gray-200: #e5e7eb;
-    --gray-50: #f7f8fa;
-    --white: #ffffff;
-
-    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      Helvetica, Arial, sans-serif;
-  }
-
   * {
-    border-color: theme(colors.gray.200);
+    @apply border-gray-200;
   }
 
   body {
     @apply bg-gray-50 font-sans text-gray-900 antialiased;
-    font-family: var(--font-sans);
   }
 
   #root {
     min-height: 100vh;
   }
-}
 
-@layer base {
   ::selection {
-    background: theme(colors.blue.50);
+    @apply bg-blue-100;
   }
 }
 
 @layer components {
   .shadow-card {
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+    /* Matches boxShadow.card in tailwind.config.ts. Written out rather than
+       @applied, because the component class and the utility share a name. */
+    box-shadow: 0 1px 2px rgba(0, 46, 75, 0.06);
   }
 
   .animate-expand {

@@ -4,17 +4,23 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 
-from apps.api.engine_cache import get_or_build_engine
-from apps.api.models import IngestRequest, IngestResponse, View
+from apps.api.engine_cache import get_engine
+from apps.api.models import IngestResponse, View
 from apps.api.views import build_views
 
 router = APIRouter(tags=["pipeline"])
 
 
 @router.post("/api/ingest", response_model=IngestResponse)
-async def ingest(req: IngestRequest) -> IngestResponse:
-    """Build the engine for `max_entries` and run ingestion if not cached."""
-    engine = get_or_build_engine(req.max_entries)
+async def ingest() -> IngestResponse:
+    """Ensure the engine has ingested the corpus, then report the run.
+
+    Takes no request body. The route used to require one carrying
+    ``max_entries``; when that field was removed the model was left behind as
+    an empty-but-required body, so the frontend's bodyless POST returned 422
+    and the Pipeline page never received its views.
+    """
+    engine = get_engine()
     run = engine.last_run
     if run is None:
         raise HTTPException(status_code=500, detail="ingestion produced no run")
@@ -26,9 +32,9 @@ async def ingest(req: IngestRequest) -> IngestResponse:
 
 
 @router.get("/api/pipeline/views", response_model=list[View])
-async def pipeline_views(max_entries: int = 8) -> list[View]:
+async def pipeline_views() -> list[View]:
     """Return per-record views ready for the playback animation."""
-    engine = get_or_build_engine(max_entries)
+    engine = get_engine()
     run = engine.last_run
     if run is None:
         raise HTTPException(status_code=500, detail="ingestion produced no run")

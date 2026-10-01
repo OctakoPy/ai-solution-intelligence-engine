@@ -23,14 +23,10 @@ async function api<T>(input: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export const ingest = (max_entries: number) =>
-  api<IngestResponse>("/api/ingest", {
-    method: "POST",
-    body: JSON.stringify({ max_entries }),
-  });
+/** Ingestion always runs the whole corpus; there is no size to choose. */
+export const ingest = () => api<IngestResponse>("/api/ingest", { method: "POST" });
 
-export const fetchViews = (max_entries: number) =>
-  api<View[]>(`/api/pipeline/views?max_entries=${max_entries}`);
+export const fetchViews = () => api<View[]>("/api/pipeline/views");
 
 export interface SearchArgs {
   query: string;
@@ -43,23 +39,18 @@ export interface SearchArgs {
 }
 
 export const search = (args: SearchArgs) =>
-  api<{ results: RetrievedSolution[]; next_best_action: NextBestAction | null }>(
-    "/api/search",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        query: args.query,
-        top_k: args.top_k ?? 5,
-        ...(args.context
-          ? {
-              context: Object.fromEntries(
-                Object.entries(args.context).filter(([_, v]) => v?.trim()),
-              ),
-            }
-          : {}),
-      }),
-    },
-  );
+  api<{ results: RetrievedSolution[]; next_best_action: NextBestAction | null }>("/api/search", {
+    method: "POST",
+    body: JSON.stringify({
+      query: args.query,
+      top_k: args.top_k ?? 5,
+      ...(args.context
+        ? {
+            context: Object.fromEntries(Object.entries(args.context).filter(([_, v]) => v?.trim())),
+          }
+        : {}),
+    }),
+  });
 
 interface ChatApiResponse {
   turns: Array<{ role: string; text: string; timestamp: string | null }>;
@@ -68,25 +59,18 @@ interface ChatApiResponse {
 }
 
 export const chatStart = (query: string, session_id = "default") =>
-  api<ChatApiResponse>(
-    "/api/chat/start",
-    {
-      method: "POST",
-      body: JSON.stringify({ query, session_id }),
-    },
-  );
+  api<ChatApiResponse>("/api/chat/start", {
+    method: "POST",
+    body: JSON.stringify({ query, session_id }),
+  });
 
 export const chatRespond = (session_id: string, message: string) =>
-  api<ChatApiResponse>(
-    "/api/chat/respond",
-    {
-      method: "POST",
-      body: JSON.stringify({ session_id, message }),
-    },
-  );
+  api<ChatApiResponse>("/api/chat/respond", {
+    method: "POST",
+    body: JSON.stringify({ session_id, message }),
+  });
 
-export const fetchOverview = (max_entries: number) =>
-  api<OverviewResponse>(`/api/analytics/overview?max_entries=${max_entries}`);
+export const fetchOverview = () => api<OverviewResponse>("/api/analytics/overview");
 
 export const recordOutcome = (entry_id: string, success: boolean, note = "") =>
   api<OutcomeResponse>("/api/outcomes", {

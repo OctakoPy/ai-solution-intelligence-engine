@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 SourceType = Literal["service_desk", "sap", "sharepoint", "knowledge_base"]
 CheckStage = Literal["stage1", "judge", "duplicate"]
@@ -18,29 +18,10 @@ class HealthResponse(BaseModel):
     status: Literal["ok"] = "ok"
 
 
-class DatasetSize(BaseModel):
-    """A single dataset size option."""
-
-    label: str
-    size: int
-
-
-class DatasetSizesResponse(BaseModel):
-    """List of available dataset sizes."""
-
-    options: list[DatasetSize]
-
-
 class GpuLevelResponse(BaseModel):
     """List of available GPU levels."""
 
     levels: list[str]
-
-
-class IngestRequest(BaseModel):
-    """Request body for /api/ingest."""
-
-    max_entries: int = Field(default=8, ge=1, le=200)
 
 
 class IngestResponse(BaseModel):

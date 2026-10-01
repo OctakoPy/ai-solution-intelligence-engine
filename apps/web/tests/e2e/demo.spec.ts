@@ -91,9 +91,7 @@ async function waitForBackend(request: APIRequestContext) {
   const deadline = Date.now() + 300_000;
   while (Date.now() < deadline) {
     try {
-      const response = await request.get(
-        "http://localhost:8004/api/analytics/overview?max_entries=104",
-      );
+      const response = await request.get("http://localhost:8004/api/analytics/overview");
       if (response.ok()) return;
     } catch {
       // not listening yet
@@ -114,14 +112,10 @@ test.describe("ResolveIQ demo walkthrough", () => {
     test.setTimeout(20 * 60 * 1000);
 
     // ---- 1. Overview: the learning loop is already populated --------------
-    // The dataset selector defaults to the small set; the demo needs the full
-    // one, which is what Overview and Pipeline report on.
+    // The whole corpus is always loaded, so there is no selector to set.
     await waitForBackend(request);
     await page.goto("http://localhost:5179/overview");
     await beat(page, 1200);
-    const dataset = page.getByRole("combobox").first();
-    await glideTo(page, dataset);
-    await dataset.selectOption({ label: "Full (104)" });
     await expect(page.getByText("Processed Records")).toBeVisible({
       timeout: 60000,
     });

@@ -8,7 +8,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PageHeader } from "@/components/ui/page-header";
 import { fetchOverview } from "@/lib/api";
-import { useUIStore } from "@/stores/ui";
+import { CHART } from "@/lib/palette";
 import type { OverviewFlaggedRow, OverviewRecentRow } from "@/lib/types";
 
 const RECENT_COLUMNS = [
@@ -73,10 +73,9 @@ function relativeTime(iso: string): string {
 }
 
 export default function Overview() {
-  const datasetSize = useUIStore((s) => s.datasetSize);
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["overview", datasetSize],
-    queryFn: () => fetchOverview(datasetSize),
+    queryKey: ["overview"],
+    queryFn: fetchOverview,
   });
 
   return (
@@ -148,10 +147,10 @@ export default function Overview() {
               </h2>
               <DonutChart
                 data={[
-                  { label: "Added", value: data.added, color: "#0E9354" },
-                  { label: "Rejected", value: data.rejected, color: "#E5484D" },
-                  { label: "Processing", value: 0, color: "#175FEE" },
-                  { label: "Review", value: data.flagged_count, color: "#F5A623" },
+                  { label: "Added", value: data.added, color: CHART.success },
+                  { label: "Rejected", value: data.rejected, color: CHART.danger },
+                  { label: "Processing", value: 0, color: CHART.brand },
+                  { label: "Review", value: data.flagged_count, color: CHART.warning },
                 ]}
                 total={data.processed}
               />
@@ -201,12 +200,12 @@ export default function Overview() {
                       {
                         label: "Worked",
                         value: data.memory_stats.worked,
-                        color: "#0E9354",
+                        color: CHART.success,
                       },
                       {
                         label: "Rejected",
                         value: data.memory_stats.rejected,
-                        color: "#E5484D",
+                        color: CHART.danger,
                       },
                     ]}
                     total={data.memory_stats.total_outcomes}

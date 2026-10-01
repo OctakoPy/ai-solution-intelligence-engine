@@ -4,8 +4,19 @@ import { useUIStore } from "@/stores/ui";
 
 describe("usePlaybackStore", () => {
   beforeEach(() => {
-    usePlaybackStore.setState({ ...usePlaybackStore.getState(), views: [], status: "idle", currentIndex: 0, phase: "title", tallyProcessed: 0, tallyAdded: 0, tallyFlagged: 0, tallyRejected: 0, recent: [] });
-    useUIStore.setState({ datasetSize: 8, gpuLevel: "GPU Level 2 (Medium)", page: "overview" });
+    usePlaybackStore.setState({
+      ...usePlaybackStore.getState(),
+      views: [],
+      status: "idle",
+      currentIndex: 0,
+      phase: "title",
+      tallyProcessed: 0,
+      tallyAdded: 0,
+      tallyFlagged: 0,
+      tallyRejected: 0,
+      recent: [],
+    });
+    useUIStore.setState({ gpuLevel: "GPU Level 2 (Medium)", page: "overview" });
   });
 
   it("starts in idle state", () => {

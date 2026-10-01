@@ -26,13 +26,11 @@ export function BarList({ items, className, maxLabelWidth = "40%" }: BarListProp
           </span>
           <div className="relative flex-1 h-2 bg-gray-200 rounded">
             <div
-              className="h-full rounded bg-gradient-to-r from-blue-600 to-blue-50"
+              className="h-full rounded bg-gradient-to-r from-blue-600 to-blue-400"
               style={{ width: `${(item.value / max) * 100}%` }}
             />
           </div>
-          <span className="w-8 text-right text-sm font-semibold text-gray-900">
-            {item.value}
-          </span>
+          <span className="w-8 text-right text-sm font-semibold text-gray-900">{item.value}</span>
         </div>
       ))}
     </div>

@@ -6,12 +6,13 @@ export type CheckStage = "source" | "stage1" | "judge" | "duplicate";
 
 export type Outcome = "added" | "rejected" | "flagged";
 
-export type Language = "en" | "bm" | "zh";
+export type Language = "en" | "bm" | "zh" | "ja";
 
 export const LANGUAGE_LABELS: Record<Language, string> = {
   en: "EN",
   bm: "BM",
   zh: "中文",
+  ja: "日本語",
 };
 
 export interface Check {

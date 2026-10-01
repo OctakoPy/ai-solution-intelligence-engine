@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from apps.api.engine_cache import get_or_build_engine
+from apps.api.engine_cache import get_engine
 from apps.api.models import (
     IncidentContext,
     RetrievedSolution,
@@ -36,7 +36,7 @@ def _to_context(req: IncidentContext | None) -> CoreContext | None:
 @router.post("/api/search", response_model=SearchResponse)
 async def search(req: SearchRequest) -> SearchResponse:
     """Free-text search across the indexed knowledge base."""
-    engine = get_or_build_engine(0)
+    engine = get_engine()
     context = _to_context(req.context)
     hits = engine.search(req.query, top_k=req.top_k, context=context)
     hits = prefer_topical(hits, req.query, context)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 
-from apps.api.engine_cache import get_or_build_engine
+from apps.api.engine_cache import get_engine
 from apps.api.models import OutcomeRequest, OutcomeResponse
 from solution_intelligence.retrieval import IncidentContext as CoreContext
 
@@ -14,7 +14,7 @@ router = APIRouter(tags=["outcomes"])
 @router.post("/api/outcomes", response_model=OutcomeResponse)
 async def record_outcome(req: OutcomeRequest) -> OutcomeResponse:
     """Record a confirmed outcome and fold it back into future ranking."""
-    engine = get_or_build_engine(0)
+    engine = get_engine()
     context: CoreContext | None = (
         CoreContext(
             error_code=req.context.error_code,
@@ -50,7 +50,7 @@ async def record_outcome(req: OutcomeRequest) -> OutcomeResponse:
 @router.get("/api/outcomes/status", response_model=OutcomeResponse)
 async def outcome_status(entry_id: str) -> OutcomeResponse:
     """Return the learned outcome state for one entry (no write)."""
-    engine = get_or_build_engine(0)
+    engine = get_engine()
     entry = engine.index.get(entry_id)
     if entry is None:
         raise HTTPException(status_code=404, detail=f"unknown entry id: {entry_id!r}")

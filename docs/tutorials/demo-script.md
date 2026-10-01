@@ -1,6 +1,6 @@
 # Demo Script
 
-A step-by-step demo of the Solution Intelligence Engine, run on the **Full (78)**
+A step-by-step demo of the Solution Intelligence Engine, run on the whole **104-record**
 dataset. Questions are phrased as a real support agent would type them, and
 include failing cases to show honest gap handling.
 
@@ -159,7 +159,7 @@ dataset, not a live translator).
 
 ## Voiceover walkthrough (5 min)
 
-Run on the **Full (78)** dataset. Non-technical narration, dashboard order:
+Run on the whole 104-record dataset. Non-technical narration, dashboard order:
 
 **Overview → Pipeline → Find a Solution → Chat**
 
@@ -261,7 +261,7 @@ solve once and reuse forever."
 
 ## What you can test — outcome-aware context (Find a Solution)
 
-Set the dataset to **Full (78)**, open **Find a Solution**, and run these
+Open **Find a Solution** and run these
 scenarios. Use the **Incident details (optional)** panel to add an error code,
 system, and environment; matched details appear as green **✓ badges** on the
 result cards (Error code / System / Environment) and are reflected in the

@@ -1,3 +1,4 @@
+import { SURFACE } from "@/lib/palette";
 import { cn } from "@/lib/utils";
 
 export interface DonutChartDatum {
@@ -11,6 +12,8 @@ export interface DonutChartProps {
   total?: number;
   size?: number;
   className?: string;
+  /** Matches the card the chart sits on; see SURFACE in lib/palette. */
+  surface?: string;
 }
 
 export function DonutChart({
@@ -18,9 +21,9 @@ export function DonutChart({
   total,
   size = 110,
   className,
+  surface = SURFACE,
 }: DonutChartProps) {
-  const sum =
-    total ?? data.reduce((acc, d) => acc + d.value, 0);
+  const sum = total ?? data.reduce((acc, d) => acc + d.value, 0);
   const nonzero = data.filter((d) => d.value > 0);
   let offset = 0;
   const rings = nonzero.map((d) => {
@@ -35,18 +38,8 @@ export function DonutChart({
   const circum = 2 * Math.PI * radius;
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-4",
-        className,
-      )}
-    >
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        className="block"
-      >
+    <div className={cn("flex items-center gap-4", className)}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
         {rings.map((d, i) => {
           const segLen = (d.seg / 360) * circum;
           const gap = 0.5;
@@ -73,24 +66,17 @@ export function DonutChart({
           cx={size / 2}
           cy={size / 2}
           r={radius - 18}
-          fill="white"
+          fill={surface}
           className="drop-shadow"
         />
       </svg>
       <div className="flex flex-col gap-2">
         {data.map((d, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-2 text-base"
-          >
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: d.color }}
-            />
+          <div key={i} className="flex items-center gap-2 text-base">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: d.color }} />
             <span className="text-gray-900">{d.label}</span>
             <span className="ml-auto text-sm text-gray-500">
-              {sum > 0 ? `${((d.value / sum) * 100).toFixed(1)}%` : "0.0%"}{" "}
-              ({d.value})
+              {sum > 0 ? `${((d.value / sum) * 100).toFixed(1)}%` : "0.0%"} ({d.value})
             </span>
           </div>
         ))}

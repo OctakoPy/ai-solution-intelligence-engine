@@ -75,7 +75,7 @@ def test_shared_memory_seeds_on_first_process_use(monkeypatch):
     fake = ResolutionMemory(path=None)
     monkeypatch.setattr(engine_cache, "ResolutionMemory", lambda: fake)
     monkeypatch.setattr(engine_cache, "_memory", None)
-    monkeypatch.setattr(engine_cache, "_engine_cache", {})
+    monkeypatch.setattr(engine_cache, "_engine", None)
     memory = engine_cache._shared_memory()
     assert memory is fake
     assert len(memory) == len(SEED_OUTCOMES)

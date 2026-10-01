@@ -1,4 +1,4 @@
-"""Per-`max_entries` engine cache shared by the FastAPI app."""
+"""The single shared engine behind the FastAPI app."""
 
 from __future__ import annotations
 
@@ -7,26 +7,19 @@ from solution_intelligence.memory import ResolutionMemory
 from solution_intelligence.service import SolutionEngine
 from solution_intelligence.sources import load_filtered
 
-DATASET_OPTIONS: list[tuple[str, int]] = [
-    ("Debug (3)", 3),
-    ("Small (8)", 8),
-    ("Full (78)", 78),
-]
-
 GPU_LEVELS: list[str] = [
     "GPU Level 1 (Slow)",
     "GPU Level 2 (Medium)",
     "GPU Level 3 (Fast)",
 ]
 
-_engine_cache: dict[int, SolutionEngine] = {}
+_engine: SolutionEngine | None = None
 
 # One shared Resolution Memory for the whole API process, persisted next to
 # the dataset. On first use each process, the log is reset to the fixed demo
 # seed (see apps.api.demo_seed) so every restart shows the same known
 # learning state; outcomes recorded live during the session apply on top
-# until the next restart. Learning is per knowledge record, not per cache
-# key, so the shared memory applies to every engine variant.
+# until the next restart.
 _memory: ResolutionMemory | None = None
 
 
@@ -43,19 +36,21 @@ def _shared_memory() -> ResolutionMemory:
     return _memory
 
 
-def get_or_build_engine(max_entries: int) -> SolutionEngine:
-    """Return a cached engine for `max_entries`, building it on first call.
+def get_engine() -> SolutionEngine:
+    """Return the shared engine, building it from the whole corpus on first call.
 
-    ``max_entries`` <= 0 (or a large sentinel) loads the entire dataset so
-    every record — including multilingual entries — is searchable.
+    There used to be one engine per ``max_entries`` so the sidebar could offer
+    Debug (3) and Small (8) subsets. Those defaults were a development
+    convenience and they were actively misleading: the app defaulted to 8
+    records, which excluded the manufacturing AMS entries and nearly all of
+    the multilingual coverage. One engine, the full corpus.
     """
-    key = max_entries if max_entries > 0 else -1
-    if key not in _engine_cache:
+    global _engine
+    if _engine is None:
         engine = SolutionEngine(memory=_shared_memory())
-        entries = load_filtered(max_total=max_entries)
-        engine.ingest(entries)
-        _engine_cache[key] = engine
-    return _engine_cache[key]
+        engine.ingest(load_filtered())
+        _engine = engine
+    return _engine
 
 
 def reset_cache() -> None:
@@ -66,8 +61,8 @@ def reset_cache() -> None:
     demo seed (the in-memory swap is never seeded); production never calls
     this, so it keeps the persistent, seeded default.
     """
-    global _memory
-    _engine_cache.clear()
+    global _memory, _engine
+    _engine = None
     _memory = ResolutionMemory(path=None)
 
 

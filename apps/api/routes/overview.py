@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from solution_intelligence.models import StageResult
 
 import solution_intelligence.analytics as engine_analytics
-from apps.api.engine_cache import get_or_build_engine
+from apps.api.engine_cache import get_engine
 from apps.api.models import (
     OverviewCategoryRow,
     OverviewCategoryTimeRow,
@@ -44,9 +44,9 @@ def _pretty_category(raw: str) -> str:
 
 
 @router.get("/api/analytics/overview", response_model=OverviewResponse)
-async def overview(max_entries: int = 8) -> OverviewResponse:
+async def overview() -> OverviewResponse:
     """Aggregate KPIs, top categories, before/after impact, and recent activity."""
-    engine = get_or_build_engine(max_entries)
+    engine = get_engine()
     run = engine.last_run
     views = build_views(run) if run else []
     processed = len(views)

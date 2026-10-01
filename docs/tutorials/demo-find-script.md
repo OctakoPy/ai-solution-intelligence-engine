@@ -5,7 +5,8 @@ fields exactly as written, and you will get exactly what is described.
 
 All values below were measured from the running system, not estimated.
 
-**Before you start:** `just dev` → dataset **Full (78)**. Hard-refresh the
+**Before you start:** `just dev`. The whole corpus is loaded automatically.
+Hard-refresh the
 browser (Ctrl+R) so the dashboard is current.
 
 ---

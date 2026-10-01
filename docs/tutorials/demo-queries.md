@@ -1,7 +1,7 @@
 # Demo Query Set — verified behavior
 
 Every query below was run through both **Find a Solution** (`/api/search`) and
-**Chat** (`/api/chat/start`) against the Full (78) dataset. Re-run them all at
+**Chat** (`/api/chat/start`) against the whole 104-record dataset. Re-run them all at
 any time:
 
 ```bash

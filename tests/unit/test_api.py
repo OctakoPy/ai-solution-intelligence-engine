@@ -5,8 +5,9 @@ from __future__ import annotations
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from apps.api.engine_cache import get_or_build_engine, reset_cache
+from apps.api.engine_cache import get_engine, reset_cache
 from apps.api.main import app
+from solution_intelligence.sources import load_entries
 from solution_intelligence.policy import PROVEN_FLOOR, TRUSTED_MIN_ATTEMPTS
 
 
@@ -33,13 +34,24 @@ async def test_health(client: AsyncClient) -> None:
 
 
 @pytest.mark.anyio
-async def test_dataset_sizes(client: AsyncClient) -> None:
-    resp = await client.get("/api/dataset/sizes")
+async def test_ingestion_always_covers_the_whole_corpus(client: AsyncClient) -> None:
+    """The dataset-size selector is gone, so there is nothing to under-serve.
+
+    It used to default to 8 records, which silently excluded the
+    manufacturing AMS entries and most of the multilingual coverage.
+    """
+    # The frontend posts with no body at all, so the route must accept that.
+    resp = await client.post("/api/ingest")
     assert resp.status_code == 200
-    data = resp.json()
-    assert len(data["options"]) == 3
-    labels = [o["label"] for o in data["options"]]
-    assert "Debug (3)" in labels and "Full (78)" in labels
+    engine = get_engine()
+    total = len(load_entries("data/knowledge.json"))
+    assert engine.index.size > 0
+    assert total == 104, "update this when the corpus grows"
+    # The subset endpoint is gone rather than returning a single option.
+    assert (await client.get("/api/dataset/sizes")).status_code == 404
+    # A max_entries query param is ignored, not honoured.
+    views = await client.get("/api/pipeline/views?max_entries=3")
+    assert views.status_code == 200
 
 
 @pytest.mark.anyio
@@ -684,7 +696,7 @@ async def test_search_supermarket_proven_below_floor_escalates(
 async def test_outcome_endpoint_records_and_updates_count(client: AsyncClient) -> None:
     """POST /api/outcomes persists the outcome and bumps worked_count."""
     await client.post("/api/ingest", json={"max_entries": 3})
-    engine = get_or_build_engine(0)
+    engine = get_engine()
     entry = engine.index.entries[0]
     before = (entry.worked, entry.attempted)
     resp = await client.post(
@@ -710,7 +722,7 @@ async def test_outcome_endpoint_unknown_id_returns_404(client: AsyncClient) -> N
 @pytest.mark.anyio
 async def test_outcome_status_reports_learned_state(client: AsyncClient) -> None:
     await client.post("/api/ingest", json={"max_entries": 3})
-    engine = get_or_build_engine(0)
+    engine = get_engine()
     entry_id = engine.index.entries[0].id
     await client.post("/api/outcomes", json={"entry_id": entry_id, "success": False})
     resp = await client.get(f"/api/outcomes/status?entry_id={entry_id}")
@@ -722,10 +734,10 @@ async def test_outcome_status_reports_learned_state(client: AsyncClient) -> None
 
 
 @pytest.mark.anyio
-async def test_outcome_learns_across_engines(client: AsyncClient) -> None:
+async def test_recorded_outcome_updates_the_index(client: AsyncClient) -> None:
     """The recording engine updates immediately; new engines learn at ingest."""
     await client.post("/api/ingest", json={"max_entries": 3})
-    full = get_or_build_engine(0)
+    full = get_engine()
     entry_id = full.index.entries[0].id
     recorded = full.index.get(entry_id)
     assert recorded is not None
@@ -739,11 +751,10 @@ async def test_outcome_learns_across_engines(client: AsyncClient) -> None:
     updated = full.index.get(entry_id)
     assert updated is not None
     assert updated.attempted == base_attempted + 1
-    # A newly built engine variant applies the same shared memory on ingest.
-    fresh = get_or_build_engine(8)
-    learned = fresh.index.get(entry_id)
-    assert learned is not None
-    assert learned.attempted == base_attempted + 1
+    # There is now one engine for the whole corpus, so the outcome is
+    # visible immediately and there is no second variant to rebuild. This
+    # used to assert that a differently-sized engine picked up the same
+    # shared memory; that distinction disappeared with the size selector.
 
 
 @pytest.mark.anyio
@@ -780,7 +791,7 @@ async def test_analytics_overview_memory_stats(client: AsyncClient) -> None:
     assert stats["entries_learned"] == 0
     assert stats["last_outcome_at"] is None
 
-    engine = get_or_build_engine(0)
+    engine = get_engine()
     entry_id = engine.index.entries[0].id
     posted = await client.post(
         "/api/outcomes", json={"entry_id": entry_id, "success": True}
