@@ -167,8 +167,8 @@ It rules it out.
 
 35
 00:02:18,800 --> 00:02:23,200
-Then it offers the next best
-match. Outlook syncing.
+Then it offers a different fix.
+Large attachments.
 
 36
 00:02:23,400 --> 00:02:27,600

@@ -16,6 +16,7 @@ from solution_intelligence.retrieval import (
     ConfidenceScorer,
     IncidentContext,
     KnowledgeIndex,
+    _same_issue,
     rank_results,
 )
 
@@ -146,9 +147,20 @@ class ConversationalAgent:
             for turn in reversed(session.turns):
                 if turn.candidates:
                     top_candidate = turn.candidates[0]
-                    if top_candidate.entry.id not in session.rejected:
-                        session.rejected.add(top_candidate.entry.id)
-                        session.rejected_titles.append(top_candidate.entry.title)
+                    rejected_entry = top_candidate.entry
+                    if rejected_entry.id not in session.rejected:
+                        session.rejected.add(rejected_entry.id)
+                        session.rejected_titles.append(rejected_entry.title)
+                        # A translation is the same advice in another
+                        # language, so ruling out the English record has to
+                        # rule out its siblings too. Otherwise rejecting a
+                        # record whose Japanese copy happened to out-score it
+                        # left that copy at full strength as the top answer.
+                        for entry in self.index.entries:
+                            if entry.id != rejected_entry.id and _same_issue(
+                                entry, rejected_entry
+                            ):
+                                session.rejected.add(entry.id)
                     break
 
         intent = detect_intent(message)

@@ -392,12 +392,24 @@ def _with_language_coverage(
             )
             promoted = None
             if english_sibling is not None:
-                similarity = index.similarity_to(english_sibling.id, query)
-                promoted = RetrievedSolution(
-                    entry=english_sibling,
-                    score=round(similarity, 3),
-                    confidence=scorer.score(english_sibling, similarity, context),
+                # Reuse the object ranking already produced when the entry is
+                # in the pool. Rebuilding it from the index re-derived its raw
+                # similarity and threw away whatever the caller had decided
+                # about it, so a record the chat agent had just demoted for
+                # being wrong came back at full strength and was promoted
+                # straight to the top of the answer.
+                in_pool = next(
+                    (c for c in pool if c.entry.id == english_sibling.id), None
                 )
+                if in_pool is not None:
+                    promoted = in_pool
+                else:
+                    similarity = index.similarity_to(english_sibling.id, query)
+                    promoted = RetrievedSolution(
+                        entry=english_sibling,
+                        score=round(similarity, 3),
+                        confidence=scorer.score(english_sibling, similarity, context),
+                    )
         if promoted is not None:
             result = [promoted] + [
                 c

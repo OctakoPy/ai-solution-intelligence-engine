@@ -272,7 +272,13 @@ test.describe("ResolveIQ demo walkthrough", () => {
     await expect(page.getByText(/Ruling that out/).first()).toBeVisible({
       timeout: 30000,
     });
-    await expect(page.getByText(/Outlook not syncing new emails/).first()).toBeVisible();
+    // Scoped to the newest reply. The first answer is still on screen above,
+    // so a `.first()` locator here passed even when the follow-up repeated
+    // the record the user had just rejected. The rejected title legitimately
+    // appears twice - once in the reply that names it, once in the older
+    // card - so the record offered last is what distinguishes the two.
+    await expect(page.getByText(/Ruling that out: Outlook not syncing new emails/)).toBeVisible();
+    await expect(page.getByText(/Cannot send emails with large attachments/).last()).toBeVisible();
     await beat(page, 4200);
 
     // ---- 9. Chat: not only a bug-fix tool -------------------------------
