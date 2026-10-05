@@ -54,10 +54,16 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe("brand palette", () => {
-  it("uses NTT Blue as the brand colour", () => {
+  it("uses NTT Blue as the brand colour on a brand-blue page", () => {
     // NTT Blue, PANTONE 285C. NTT DATA unified their corporate logo colour
-    // to the NTT Group colour on 1 July 2023.
+    // to the NTT Group colour on 1 July 2023. It stays a *fill* carrying
+    // white text, so primary buttons keep the brand colour.
     expect(configShades("blue")["600"]).toBe("#0072BC");
+    // The page is the deepest step of the same ramp, not a neutral dark grey.
+    expect(configShades("gray")["50"]).toBe("#002E4B");
+    expect(configShades("blue")["900"]).toBe("#002E4B");
+    // Brand blue as text on a navy card is unreadable, so text uses 300.
+    expect(configShades("blue")["300"]).toBe("#7AB5DE");
   });
 
   it("keeps chart constants in step with the Tailwind config", () => {
@@ -66,12 +72,20 @@ describe("brand palette", () => {
     const red = configShades("red");
     const amber = configShades("amber");
 
-    expect(CHART.brand).toBe(blue["600"]);
     // Chart series use the fill step of each ramp, not the text step.
     expect(CHART.success).toBe(green["400"]);
-    expect(CHART.danger).toBe(red["500"]);
     expect(CHART.warning).toBe(amber["400"]);
-    expect(SURFACE).toBe("#FFFFFF");
+    expect(SURFACE).toBe(configShades("gray")["100"]);
+
+    // danger is the 500 step rather than the 400 fill: the 400 red is only
+    // 2.9:1 on the card, too faint for a 12px ring.
+    expect(CHART.danger).toBe(red["500"]);
+
+    // The brand series is deliberately NOT blue-600. #0072BC is the brand for
+    // fills carrying white text, and on a navy card it is 1.7:1, so a donut
+    // drawn in it would be invisible. It is a lifted brand blue instead, and
+    // the "visible against the card surface" test below is what holds it.
+    expect(CHART.brand).not.toBe(blue["600"]);
   });
 
   it("defines every shade of every palette so no stock Tailwind colour leaks", () => {
@@ -87,26 +101,70 @@ describe("brand palette", () => {
     }
   });
 
-  it("keeps every text-range semantic shade above AA on white", () => {
-    // The old palette used one shade as both fill and text, so the status
-    // vocabulary failed: amber 1.73:1, green 3.95:1, red 3.91:1.
-    const luminance = (hex: string) => {
-      const channel = (v: number) => {
-        const c = v / 255;
-        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  it("keeps every text-range semantic shade above AA on the dark surfaces", () => {
+    // The light theme used one shade as both fill and text, so the status
+    // vocabulary failed: amber 1.73:1, green 3.95:1, red 3.91:1. These are
+    // now the dark-theme text steps and are checked against both surfaces a
+    // card or the page can sit on.
+    const card = "#0A3A5C";
+    const page = "#002E4B";
+    const contrast = (a: string, b: string) => {
+      const channel = (hex: string, from: number) => {
+        const v = parseInt(hex.slice(from, from + 2), 16) / 255;
+        return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
       };
-      const r = channel(parseInt(hex.slice(1, 3), 16));
-      const g = channel(parseInt(hex.slice(3, 5), 16));
-      const b = channel(parseInt(hex.slice(5, 7), 16));
-      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      const lum = (hex: string) =>
+        0.2126 * channel(hex, 1) + 0.7152 * channel(hex, 3) + 0.0722 * channel(hex, 5);
+      const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
     };
-    const contrast = (hex: string) => 1.05 / (luminance(hex) + 0.05);
 
     for (const family of ["green", "amber", "red"]) {
       for (const step of [500, 600, 700, 800, 900]) {
         const value = configShades(family)[String(step)];
-        expect(contrast(value), `${family}-${step} on white`).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(value, card), `${family}-${step} on card`).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(value, page), `${family}-${step} on page`).toBeGreaterThanOrEqual(4.5);
       }
+    }
+  });
+
+  it("keeps body text legible on both dark surfaces", () => {
+    const card = "#0A3A5C";
+    const page = "#002E4B";
+    const luminance = (hex: string) => {
+      const channel = (from: number) => {
+        const v = parseInt(hex.slice(from, from + 2), 16) / 255;
+        return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+    };
+    const contrast = (a: string, b: string) => {
+      const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    const gray = configShades("gray");
+    // 900 is body text, 500 is the most-used muted token in the app.
+    for (const step of ["500", "600", "700", "900"]) {
+      expect(contrast(gray[step], card), `gray-${step} on card`).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(gray[step], page), `gray-${step} on page`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("keeps chart series visible against the card surface", () => {
+    const luminance = (hex: string) => {
+      const channel = (from: number) => {
+        const v = parseInt(hex.slice(from, from + 2), 16) / 255;
+        return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+    };
+    const contrast = (a: string, b: string) => {
+      const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    // Graphics need 3:1, not the 4.5:1 that text does.
+    for (const [name, value] of Object.entries(CHART)) {
+      expect(contrast(value, SURFACE), `${name} series`).toBeGreaterThanOrEqual(3);
     }
   });
 

@@ -136,7 +136,7 @@ export default function Chat() {
 
       <div className="flex min-h-[24rem] flex-1 flex-col gap-3">
         {turns.length === 0 && (
-          <div className="rounded-xl border border-gray-200 bg-white p-6 text-base text-gray-500">
+          <div className="rounded-xl border border-gray-200 bg-gray-100 p-6 text-base text-gray-500">
             Ask a question to start the conversation.
           </div>
         )}
@@ -154,7 +154,7 @@ export default function Chat() {
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200">
                 <Bot className="h-4 w-4 text-gray-500" />
               </div>
-              <div className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white p-4 text-base">
+              <div className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-gray-100 p-4 text-base">
                 <AssistantReply text={turn.text} />
                 {turn.nextAction && (
                   <NextBestActionBanner action={turn.nextAction} className="mt-3" />
@@ -175,7 +175,7 @@ export default function Chat() {
                       <button
                         type="button"
                         onClick={() => toggleSources(i)}
-                        className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium text-blue-700 hover:bg-blue-50"
+                        className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium text-blue-300 hover:bg-blue-50"
                       >
                         {showSources.has(i) ? "Hide" : "Show"} sources ({turn.candidates.length})
                         <ChevronDown
@@ -206,7 +206,7 @@ export default function Chat() {
                                 <button
                                   type="button"
                                   onClick={() => toggleExpand(c.id)}
-                                  className="flex shrink-0 items-center gap-1 rounded-md border border-blue-600 px-2 py-0.5 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+                                  className="flex shrink-0 items-center gap-1 rounded-md border border-blue-300 px-2 py-0.5 text-sm font-semibold text-blue-300 hover:bg-blue-50"
                                 >
                                   <ChevronDown
                                     className={`h-4 w-4 transition-transform ${
@@ -244,7 +244,7 @@ export default function Chat() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send(input)}
           placeholder="Ask a follow-up question..."
-          className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-base outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-50"
+          className="flex-1 rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-base outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-500"
         />
         <button
           onClick={() => send(input)}
@@ -264,7 +264,7 @@ export default function Chat() {
                 "the nightly sap batch job for inventory reconciliation keeps short dumping. how do i fix it?",
               )
             }
-            className="rounded-full border border-blue-600 bg-white px-3 py-1 text-sm font-medium text-blue-600 hover:bg-blue-50"
+            className="rounded-full border border-blue-300 bg-gray-100 px-3 py-1 text-sm font-medium text-blue-300 hover:bg-blue-50"
           >
             Nightly SAP batch job keeps short dumping
           </button>
@@ -273,21 +273,21 @@ export default function Chat() {
             <button
               type="button"
               onClick={() => send("Which environment is this in - UAT or production?")}
-              className="rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-200"
             >
               Which environment is this in - UAT or production?
             </button>
             <button
               type="button"
               onClick={() => send("Still not working, what next?")}
-              className="rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-200"
             >
               Still not working, what next?
             </button>
             <button
               type="button"
               onClick={() => setTurns([])}
-              className="ml-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium text-gray-500 hover:bg-gray-50"
+              className="ml-auto inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium text-gray-500 hover:bg-gray-200"
             >
               <Trash2 className="h-3.5 w-3.5" />
               New chat

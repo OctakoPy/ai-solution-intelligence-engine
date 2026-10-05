@@ -28,9 +28,7 @@ export function SolutionDetails({ solution, className }: SolutionDetailsProps) {
       ? solution.english_description
       : solution.description;
   const resolution =
-    translated && solution.english_resolution
-      ? solution.english_resolution
-      : solution.resolution;
+    translated && solution.english_resolution ? solution.english_resolution : solution.resolution;
 
   return (
     <div className={cn("mt-3 space-y-2 border-t border-gray-100 pt-3 animate-expand", className)}>
@@ -42,7 +40,7 @@ export function SolutionDetails({ solution, className }: SolutionDetailsProps) {
           {showTranslate && (
             <button
               onClick={() => setTranslated((t) => !t)}
-              className="inline-flex items-center gap-1 rounded-md border border-blue-600 px-2 py-0.5 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+              className="inline-flex items-center gap-1 rounded-md border border-blue-300 px-2 py-0.5 text-sm font-semibold text-blue-300 hover:bg-blue-50"
             >
               <Languages className="h-3.5 w-3.5" />
               {translated ? "Show Original" : "Translate to English"}

@@ -85,7 +85,7 @@ export default function Overview() {
       {isLoading && <div className="text-base text-gray-500">Loading metrics...</div>}
 
       {isError && (
-        <div className="rounded-lg border border-red-500 bg-red-50 p-4 text-base text-red-700">
+        <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-base text-red-700">
           Failed to load overview: {String((error as Error).message)}
         </div>
       )}
@@ -141,7 +141,7 @@ export default function Overview() {
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-12">
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card lg:col-span-4">
+            <div className="rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-card lg:col-span-4">
               <h2 className="mb-3 text-lg font-semibold text-gray-900">
                 Ingestion Summary (Today)
               </h2>
@@ -156,7 +156,7 @@ export default function Overview() {
               />
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card lg:col-span-4">
+            <div className="rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-card lg:col-span-4">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Top Categories</h2>
               </div>
@@ -168,7 +168,7 @@ export default function Overview() {
               />
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card lg:col-span-4">
+            <div className="rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-card lg:col-span-4">
               <h2 className="mb-3 text-lg font-semibold text-gray-900">Before vs After (Impact)</h2>
               <div className="flex flex-col gap-4">
                 {data.before_after.map((row) => (
@@ -184,9 +184,9 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-card">
+          <div className="mt-6 rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-card">
             <div className="mb-3 flex items-center gap-2">
-              <Brain className="h-5 w-5 text-blue-600" />
+              <Brain className="h-5 w-5 text-blue-300" />
               <h2 className="text-lg font-semibold text-gray-900">Resolution Memory</h2>
               <span className="text-sm text-gray-400">
                 confirmed outcomes feeding the learning loop
@@ -233,7 +233,7 @@ export default function Overview() {
                       <div className="text-sm text-gray-500">Entries learned</div>
                     </div>
                     <div>
-                      <div className="text-3xl font-bold text-blue-600">
+                      <div className="text-3xl font-bold text-blue-300">
                         {data.memory_stats.proven_fixes}
                       </div>
                       <div className="text-sm text-gray-500">Proven fixes</div>
@@ -259,9 +259,9 @@ export default function Overview() {
             )}
           </div>
 
-          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-card">
+          <div className="mt-6 rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-card">
             <div className="mb-3 flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-600" />
+              <Clock className="h-5 w-5 text-blue-300" />
               <h2 className="text-lg font-semibold text-gray-900">Resolution Time by Category</h2>
             </div>
             <div className="grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -277,7 +277,7 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-card">
+          <div className="mt-6 rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-card">
             <h2 className="mb-3 text-lg font-semibold text-gray-900">Recent Activity</h2>
             <DataTable
               columns={RECENT_COLUMNS}

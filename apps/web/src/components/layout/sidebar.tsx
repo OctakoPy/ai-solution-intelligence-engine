@@ -29,7 +29,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-60 flex-col overflow-y-auto bg-navy-900 p-4 text-white">
       <div className="mb-8 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-2xl">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-2xl">
           🧠
         </div>
         <span className="text-xs font-bold uppercase tracking-wider leading-tight">ResolveIQ</span>
@@ -45,7 +45,7 @@ export function Sidebar() {
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
                 active
                   ? "bg-navy-700 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
               }`}
             >
               <Icon className="h-4 w-4" />

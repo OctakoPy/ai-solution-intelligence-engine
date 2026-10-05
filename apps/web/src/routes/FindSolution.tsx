@@ -97,7 +97,7 @@ export default function FindSolution() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch(query)}
             placeholder="email not syncing on mobile"
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-base text-gray-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-50"
+            className="w-full rounded-lg border border-gray-200 bg-gray-100 py-2 pl-10 pr-4 text-base text-gray-900 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <button
@@ -110,7 +110,7 @@ export default function FindSolution() {
 
       <button
         onClick={() => setShowIncident((s) => !s)}
-        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline"
+        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-300 hover:underline"
       >
         <ChevronDown
           className={`h-4 w-4 transition-transform ${showIncident ? "rotate-180" : ""}`}
@@ -128,7 +128,7 @@ export default function FindSolution() {
                 value={errorCode}
                 onChange={(e) => setErrorCode(e.target.value)}
                 placeholder="M8149, S_RS_COMP"
-                className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-600"
+                className="rounded-md border border-gray-200 bg-gray-100 px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-300"
               />
             </label>
             <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
@@ -138,7 +138,7 @@ export default function FindSolution() {
                 value={module}
                 onChange={(e) => setModule(e.target.value)}
                 placeholder="SAP MM, VPN"
-                className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-600"
+                className="rounded-md border border-gray-200 bg-gray-100 px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-300"
               />
             </label>
             <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
@@ -148,7 +148,7 @@ export default function FindSolution() {
                 value={environment}
                 onChange={(e) => setEnvironment(e.target.value)}
                 placeholder="PROD, UAT"
-                className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-600"
+                className="rounded-md border border-gray-200 bg-gray-100 px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-300"
               />
             </label>
             <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
@@ -159,7 +159,7 @@ export default function FindSolution() {
                 onChange={(e) => setRelease(e.target.value)}
                 placeholder="2503"
                 aria-label="Release"
-                className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-600"
+                className="rounded-md border border-gray-200 bg-gray-100 px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-300"
               />
             </label>
             <button
@@ -198,7 +198,7 @@ export default function FindSolution() {
           the record is right but unconfirmed, and the cards must stay
           visible: the user supplies the missing detail by looking at them. */}
       {declined ? (
-        <div className="mt-3 rounded-lg border border-gray-200 bg-white p-4 text-base text-gray-500">
+        <div className="mt-3 rounded-lg border border-gray-200 bg-gray-100 p-4 text-base text-gray-500">
           No appropriate match found in the available records. Try describing the issue differently,
           or use Chat to add context and narrow it down.
         </div>
@@ -212,13 +212,13 @@ export default function FindSolution() {
         {searchMut.isPending && <div className="text-base text-gray-500">Searching...</div>}
 
         {!declined && searched && results.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-4 text-base text-gray-500">
+          <div className="rounded-lg border border-gray-200 bg-gray-100 p-4 text-base text-gray-500">
             No results.
           </div>
         )}
 
         {!nextAction && !searched && (
-          <div className="rounded-lg border border-gray-200 bg-white p-4 text-base text-gray-500">
+          <div className="rounded-lg border border-gray-200 bg-gray-100 p-4 text-base text-gray-500">
             Run a search to see matching solutions.
           </div>
         )}
@@ -241,7 +241,7 @@ export default function FindSolution() {
             return (
               <div
                 key={r.id}
-                className="rounded-xl border border-gray-200 bg-white p-4 shadow-card"
+                className="rounded-xl border border-gray-200 bg-gray-100 p-4 shadow-card"
               >
                 <div className="flex items-start gap-3">
                   <span
@@ -275,7 +275,7 @@ export default function FindSolution() {
                   </div>
                   <button
                     onClick={toggleExpand}
-                    className="rounded-md border border-blue-600 px-3 py-1 text-sm font-semibold text-blue-600 hover:bg-blue-50 flex items-center gap-1"
+                    className="rounded-md border border-blue-300 px-3 py-1 text-sm font-semibold text-blue-300 hover:bg-blue-50 flex items-center gap-1"
                   >
                     {isExpanded ? (
                       <>
@@ -310,7 +310,7 @@ export default function FindSolution() {
           Can't find what you need?{" "}
           <button
             onClick={() => navigate("/chat")}
-            className="font-medium text-blue-600 hover:underline"
+            className="font-medium text-blue-300 hover:underline"
           >
             Ask the Engine
           </button>

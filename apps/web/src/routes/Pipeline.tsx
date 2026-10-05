@@ -35,7 +35,7 @@ function ExclusionPanel({ views }: { views: View[] }) {
   const rows = [...excluded.entries()].sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card">
+    <div className="rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-card">
       <div className="flex items-center gap-2">
         <ShieldCheck className="h-5 w-5 text-green-600" />
         <h2 className="text-lg font-semibold text-gray-900">Kept out of the search index</h2>
@@ -94,13 +94,13 @@ function Pipeline() {
   return (
     <div className="flex flex-col gap-4">
       {!isReady && (
-        <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-6 text-base text-gray-500">
+        <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-100 p-6 text-base text-gray-500">
           <Loader2 className="h-4 w-4 animate-spin" /> Preparing pipeline data...
         </div>
       )}
 
       {isReady && status === "idle" && (
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
+        <div className="rounded-xl border border-gray-200 bg-gray-100 p-8 text-center">
           <div className="text-4xl">▶️</div>
           <h2 className="mt-3 text-xl font-bold text-gray-900">Execute Pipeline</h2>
           <button
@@ -123,7 +123,7 @@ function Pipeline() {
         />
       )}
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card">
+      <div className="rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-card">
         <h2 className="mb-3 text-lg font-semibold text-gray-900">Live Tally</h2>
         <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
           <div>
@@ -146,11 +146,11 @@ function Pipeline() {
       </div>
 
       {status === "ended" && (
-        <div className="rounded-xl border border-green-600 bg-green-50 p-4 text-base font-semibold text-green-700">
+        <div className="rounded-xl border border-green-300 bg-green-50 p-4 text-base font-semibold text-green-700">
           ✅ All records processed.
           <button
             onClick={reset}
-            className="ml-3 rounded-md border border-gray-200 bg-white px-3 py-1 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+            className="ml-3 rounded-md border border-gray-200 bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-900 hover:bg-gray-200"
           >
             Restart
           </button>
@@ -159,7 +159,7 @@ function Pipeline() {
 
       <ExclusionPanel views={views} />
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card">
+      <div className="rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-card">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Recent Processed Records</h2>
         </div>
@@ -298,7 +298,7 @@ function PlayingView({
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card">
+      <div className="rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-card">
         <div className="flex items-center justify-between">
           <span className="text-base">
             {view.source_icon} <b>{view.source_label}</b>
@@ -327,14 +327,14 @@ function PlayingView({
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-card">
+      <div className="rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-card">
         <h3 className="text-lg font-semibold text-gray-900">Pipeline Progress</h3>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {stageCards.map((s, i) => (
             <div
               key={i}
               className={`rounded-lg border border-gray-200 p-2 text-center transition-colors ${
-                s.revealed ? "bg-white" : "bg-gray-50"
+                s.revealed ? "bg-gray-100" : "bg-gray-50"
               }`}
             >
               <div className="flex justify-center">
@@ -354,7 +354,7 @@ function PlayingView({
           ))}
           <div
             className={`rounded-lg border border-gray-200 p-2 text-center transition-colors ${
-              stageProgress >= 4 ? "bg-white" : "bg-gray-50"
+              stageProgress >= 4 ? "bg-gray-100" : "bg-gray-50"
             }`}
           >
             <div className="flex justify-center">
@@ -367,7 +367,7 @@ function PlayingView({
                   <CircleX className="h-5 w-5 text-red-500" />
                 )
               ) : (
-                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                <Loader2 className="h-5 w-5 animate-spin text-blue-300" />
               )}
             </div>
             <div className="mt-1 text-sm font-semibold text-gray-900">Result</div>

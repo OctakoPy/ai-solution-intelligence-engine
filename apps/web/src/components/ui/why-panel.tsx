@@ -37,10 +37,7 @@ const SIGNAL_ORDER: SignalKey[] = [
  * *means*, so that is what is shown by default. The numbers stay one toggle
  * away for anyone reviewing the method.
  */
-function plainReasons(
-  breakdown: Record<string, number>,
-  solution: RetrievedSolution,
-): string[] {
+function plainReasons(breakdown: Record<string, number>, solution: RetrievedSolution): string[] {
   const reasons: string[] = [];
   const has = (key: SignalKey) => (breakdown[key] ?? 0) > 0;
 
@@ -101,11 +98,7 @@ function PriorSuccess({ solution }: { solution: RetrievedSolution }) {
     return null;
   }
   if (solution.attempted === 0) {
-    return (
-      <p className="text-sm text-gray-500">
-        No confirmed outcomes yet — history unknown.
-      </p>
-    );
+    return <p className="text-sm text-gray-500">No confirmed outcomes yet — history unknown.</p>;
   }
   const pct = Math.round((solution.worked / solution.attempted) * 100);
   return (
@@ -124,13 +117,8 @@ export function WhyPanel({ solution, className }: WhyPanelProps) {
   const reasons = plainReasons(breakdown, solution);
 
   return (
-    <div
-      className={cn("space-y-3 rounded-lg bg-gray-50 p-3", className)}
-      data-testid="why-panel"
-    >
-      <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-        Why this
-      </p>
+    <div className={cn("space-y-3 rounded-lg bg-gray-50 p-3", className)} data-testid="why-panel">
+      <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Why this</p>
 
       <div>
         <p className="text-sm font-medium text-gray-500">Why we picked it</p>
@@ -145,15 +133,14 @@ export function WhyPanel({ solution, className }: WhyPanelProps) {
         <button
           type="button"
           onClick={() => setShowNumbers((v) => !v)}
-          className="mt-2 text-xs font-medium text-blue-600 hover:underline"
+          className="mt-2 text-xs font-medium text-blue-300 hover:underline"
         >
           {showNumbers ? "Hide scoring detail" : "Show scoring detail"}
         </button>
         {showNumbers && (
-          <div className="mt-2 rounded border border-gray-200 bg-white p-2">
+          <div className="mt-2 rounded border border-gray-200 bg-gray-100 p-2">
             <p className="text-xs text-gray-500">
-              Weighted contributions to the confidence score. These are not
-              probabilities.
+              Weighted contributions to the confidence score. These are not probabilities.
             </p>
             {contributions.length === 0 ? (
               <p className="mt-1 text-sm text-gray-500">
@@ -162,10 +149,7 @@ export function WhyPanel({ solution, className }: WhyPanelProps) {
             ) : (
               <ul className="mt-1 space-y-1">
                 {contributions.map((key) => (
-                  <li
-                    key={key}
-                    className="flex items-center justify-between gap-2 text-sm"
-                  >
+                  <li key={key} className="flex items-center justify-between gap-2 text-sm">
                     <span className="text-gray-700">{SIGNAL_LABELS[key]}</span>
                     <span className="font-medium text-gray-900">
                       +{(breakdown[key] ?? 0).toFixed(2)}
@@ -190,9 +174,7 @@ export function WhyPanel({ solution, className }: WhyPanelProps) {
             {solution.evidence.map((e) => (
               <li key={e.id} className="text-sm text-gray-700">
                 <span className="font-medium">{e.id}</span> · {e.source}
-                {e.date && e.date !== "—"
-                  ? ` · ${e.date}`
-                  : ""}
+                {e.date && e.date !== "—" ? ` · ${e.date}` : ""}
                 {e.attempted > 0 ? ` · ${e.worked}/${e.attempted} worked` : ""}
               </li>
             ))}
@@ -208,10 +190,7 @@ export function WhyPanel({ solution, className }: WhyPanelProps) {
           </p>
           <ul className="mt-1 space-y-1">
             {caveats.map((c) => (
-              <li
-                key={c}
-                className="inline-flex items-start gap-1 text-sm text-amber-700"
-              >
+              <li key={c} className="inline-flex items-start gap-1 text-sm text-amber-700">
                 <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 {c}
               </li>

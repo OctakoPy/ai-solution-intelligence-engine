@@ -12,25 +12,32 @@
  * contrast against the card surface is not the constraint - text contrast is
  * handled by the 600+ shades.
  *
- * `tests/unit`-style drift is guarded by `brand-tokens.test.ts`, which asserts
- * these constants still equal the Tailwind config values.
+ * `brand-tokens.test.ts` asserts these constants still equal the Tailwind
+ * config values, and that they clear 3:1 against SURFACE.
  */
 
-/** Card surface the donut's inner mask has to match. */
-export const SURFACE = "#FFFFFF";
+/**
+ * Card surface the donut's inner mask has to match.
+ *
+ * This is the one hardcoded value in the theme that has no token: it is the
+ * surface the chart is painted on, and a mismatch shows as a visible disc.
+ */
+export const SURFACE = "#0A3A5C";
 
 export const CHART = {
-  /** Success fill, `green-500`. */
-  success: "#35A874",
-  /** Danger fill, `red-500`. */
-  danger: "#C42B2B",
-  /** Brand fill, `blue-600` - NTT Blue. */
-  brand: "#0072BC",
+  /** Success series, `green-400`. */
+  success: "#2FB86E",
+  /** Danger series, `red-500` - the light text step, legible as a ring. */
+  danger: "#FC8A8A",
   /**
-   * Warning fill, `amber-400`. Deliberately the light step rather than
-   * `amber-500`, which is now the text shade and reads as brown at segment
-   * size. It also keeps review visually distinct from danger: the two hues
-   * are only 36 degrees apart, so lightness is doing the separating here.
+   * Brand series. Not `#0072BC`: that is the button fill and it sits at
+   * 1.7:1 on the card, so a donut drawn in it would be nearly invisible.
+   * This is a lifted brand blue at 4.55:1.
    */
-  warning: "#E8A33A",
+  brand: "#5FA8D6",
+  /**
+   * Warning series, `amber-400`. Deliberately distinct from danger: the two
+   * hues are only 36 degrees apart, so lightness is doing the separating.
+   */
+  warning: "#F0B429",
 } as const;

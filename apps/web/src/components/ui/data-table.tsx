@@ -43,15 +43,9 @@ export function DataTable<T>({ columns, rows, empty, className }: DataTableProps
             </tr>
           ) : (
             rows.map((row, i) => (
-              <tr
-                key={i}
-                className="border-t border-gray-200 last:border-0"
-              >
+              <tr key={i} className="border-t border-gray-200 last:border-0">
                 {columns.map((col) => (
-                  <td
-                    key={String(col.key)}
-                    className="px-4 py-2 align-middle text-gray-900"
-                  >
+                  <td key={String(col.key)} className="px-4 py-2 align-middle text-gray-900">
                     {col.render
                       ? col.render(row)
                       : ((row as Record<string, unknown>)[String(col.key)] as ReactNode)}

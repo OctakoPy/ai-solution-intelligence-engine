@@ -1,18 +1,8 @@
 import { cn } from "@/lib/utils";
-import {
-  CheckCircle,
-  CircleAlert,
-  CircleX,
-} from "lucide-react";
+import { CheckCircle, CircleAlert, CircleX } from "lucide-react";
 
 export type StatusBadgeState =
-  | "added"
-  | "pass"
-  | "rejected"
-  | "reject"
-  | "flag"
-  | "flagged"
-  | "review";
+  "added" | "pass" | "rejected" | "reject" | "flag" | "flagged" | "review";
 
 export interface StatusBadgeProps {
   state: StatusBadgeState;
@@ -35,13 +25,7 @@ const MAPPING: Record<
 export function StatusBadge({ state, className }: StatusBadgeProps) {
   const { icon: Icon, label, color } = MAPPING[state] ?? MAPPING.pass;
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 text-sm font-semibold",
-        color,
-        className,
-      )}
-    >
+    <span className={cn("inline-flex items-center gap-1 text-sm font-semibold", color, className)}>
       <Icon className="h-3.5 w-3.5" />
       {label}
     </span>

@@ -30,7 +30,7 @@ export function Topbar() {
   };
 
   return (
-    <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
+    <header className="flex items-center justify-between border-b border-gray-200 bg-gray-100 px-6 py-3">
       <div>
         <h1 className="text-xl font-bold text-gray-900">
           🧠 {titles[page] ?? titles.overview}
@@ -63,7 +63,7 @@ export function Topbar() {
             className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold ${
               controlsDisabled
                 ? "cursor-not-allowed opacity-40"
-                : "border-blue-600 bg-blue-600 text-white hover:bg-blue-700"
+                : "border-blue-300 bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
             <Play className="h-4 w-4" />
@@ -72,7 +72,7 @@ export function Topbar() {
           <button
             onClick={end}
             disabled={status === "idle" || status === "ended"}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-900 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Square className="h-3.5 w-3.5" />
             End

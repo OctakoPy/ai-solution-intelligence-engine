@@ -25,9 +25,7 @@ export function OutcomeFeedback({ entryId, className }: OutcomeFeedbackProps) {
       <span
         className={cn(
           "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-          choice
-            ? "bg-green-50 text-green-700"
-            : "bg-red-50 text-red-700",
+          choice ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700",
           className,
         )}
       >

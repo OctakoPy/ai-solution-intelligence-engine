@@ -10,26 +10,17 @@ export interface StatCardProps {
   className?: string;
 }
 
-export function StatCard({
-  icon: Icon,
-  label,
-  value,
-  delta,
-  up = true,
-  className,
-}: StatCardProps) {
+export function StatCard({ icon: Icon, label, value, delta, up = true, className }: StatCardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl bg-white p-5 shadow-card border border-gray-200 flex-1",
+        "rounded-xl bg-gray-100 p-5 shadow-card border border-gray-200 flex-1",
         className,
       )}
     >
       <div className="flex items-center gap-2">
         {Icon && <Icon className="h-5 w-5 text-gray-500" />}
-        <span className="text-sm font-semibold uppercase text-gray-500">
-          {label}
-        </span>
+        <span className="text-sm font-semibold uppercase text-gray-500">{label}</span>
       </div>
       <div className="text-3xl font-bold text-gray-900 mt-2">{value}</div>
       {delta && (
