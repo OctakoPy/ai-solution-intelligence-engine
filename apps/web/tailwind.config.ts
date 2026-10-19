@@ -24,9 +24,19 @@ import type { Config } from "tailwindcss";
  *
  * Within a family:
  *   50–100  surface fills: tints, chat bubbles, banner backgrounds
- *   200–300 borders
+ *   200–300 borders, and the raised inset surface used inside a card
  *   400–500 solid fills: dots, bars, chart series
  *   600–900 text, all clearing WCAG AA (>= 4.5:1) on both the page and a card
+ *
+ * An inset panel inside a card must be *lighter* than the card, never the page
+ * colour: `bg-gray-50` is the page, so on a card it reads as a hole punched in
+ * the surface at 1.19:1 rather than as a raised chip. `bg-gray-200` is that
+ * inset step, and every text tone on it still clears AA (gray-500 is 5.26:1).
+ *
+ * The text/fill split is load-bearing. `gray-800` is a *fill* — the sidebar
+ * hover — and `text-gray-800` on the page is 1.25:1, darker than its own
+ * background. Fill and border tones are never used as text; the brand-tokens
+ * test enforces that.
  *
  * The one deliberate exception is the blue family. Its 500–900 steps are the
  * brand's dark end and are used as *fills* carrying white text — a primary
@@ -48,13 +58,13 @@ export default {
         gray: {
           50: "#002E4B", // page background
           100: "#0A3A5C", // card / raised surface
-          200: "#14496B", // border
+          200: "#14496B", // border, raised inset surface
           300: "#1D5C85", // border, emphasis
           400: "#93B2C8", // faint text
           500: "#A8C4D8", // muted text (the most-used token in the app)
           600: "#C4D9E8", // secondary text
           700: "#D2E3EF", // strong secondary text
-          800: "#123E5D", // sidebar hover fill
+          800: "#123E5D", // sidebar hover fill — a FILL, never text
           900: "#F2F8FC", // body text
         },
         // NTT Blue. 600 is the brand colour and is a *fill*: white text on it

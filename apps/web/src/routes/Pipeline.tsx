@@ -334,7 +334,7 @@ function PlayingView({
             <div
               key={i}
               className={`rounded-lg border border-gray-200 p-2 text-center transition-colors ${
-                s.revealed ? "bg-gray-100" : "bg-gray-50"
+                s.revealed ? "bg-gray-200" : "bg-gray-50"
               }`}
             >
               <div className="flex justify-center">
@@ -354,7 +354,7 @@ function PlayingView({
           ))}
           <div
             className={`rounded-lg border border-gray-200 p-2 text-center transition-colors ${
-              stageProgress >= 4 ? "bg-gray-100" : "bg-gray-50"
+              stageProgress >= 4 ? "bg-gray-200" : "bg-gray-50"
             }`}
           >
             <div className="flex justify-center">

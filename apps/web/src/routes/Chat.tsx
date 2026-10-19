@@ -163,9 +163,9 @@ export default function Chat() {
                   <div className="mt-4 border-t border-gray-100 pt-3">
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       {turn.candidates.slice(0, 3).map((c) => (
-                        <span key={c.id} className="rounded-md bg-gray-50 px-2 py-1 text-gray-600">
-                          <span className="font-medium text-gray-800">{c.id}</span>
-                          <span className="mx-1 text-gray-300">·</span>
+                        <span key={c.id} className="rounded-md bg-gray-200 px-2 py-1 text-gray-600">
+                          <span className="font-medium text-gray-900">{c.id}</span>
+                          <span className="mx-1 text-gray-500">·</span>
                           worked {c.worked}/{c.attempted}
                           <span className="ml-1.5 inline-flex align-middle">
                             <LanguageBadge language={c.language} />

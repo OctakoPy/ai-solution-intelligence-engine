@@ -168,6 +168,52 @@ describe("brand palette", () => {
     }
   });
 
+  it("never uses a fill or border tone as text", () => {
+    // The dark migration inverted the grey ramp but kept the class names, so
+    // `text-gray-800` went from "strong text" to a *fill* — the sidebar hover
+    // at #123E5D, which is 1.25:1 on the page and darker than its own
+    // background. The contrast tests above only cover the text-range steps, so
+    // this catches the fill/text mix-ups they cannot see.
+    const fillOrBorder: Record<string, number[]> = {
+      // 800 is the sidebar hover fill; 50 is the page.
+      gray: [50, 100, 200, 300, 800],
+      // Only 300 is a text step: brand blue as text on navy is 2.33:1.
+      blue: [50, 100, 200, 400, 500, 600, 700, 800, 900],
+      navy: [600, 700, 800, 900],
+      // 50–300 are tints and borders; 500+ are the dark-theme text steps.
+      green: [50, 100, 200, 300],
+      amber: [50, 100, 200, 300],
+      red: [50, 100, 200, 300],
+    };
+    const offenders: string[] = [];
+    for (const file of sourceFiles(join(process.cwd(), "src"))) {
+      const text = readFileSync(file, "utf-8");
+      for (const [family, steps] of Object.entries(fillOrBorder)) {
+        for (const step of steps) {
+          const re = new RegExp(`\\btext-${family}-${step}\\b`, "g");
+          if (re.test(text)) offenders.push(`${file}: text-${family}-${step}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps the raised inset step lighter than the card it sits on", () => {
+    // An inset panel inside a card must read as raised, not as a hole. The
+    // page colour used as an inset is only 1.19:1 against the card, so the
+    // distinction disappears entirely.
+    const luminance = (hex: string) => {
+      const channel = (from: number) => {
+        const v = parseInt(hex.slice(from, from + 2), 16) / 255;
+        return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+    };
+    const gray = configShades("gray");
+    expect(luminance(gray["200"])).toBeGreaterThan(luminance(gray["100"]));
+    expect(luminance(gray["100"])).toBeGreaterThan(luminance(gray["50"]));
+  });
+
   it("contains no raw colour literals in src outside the palette module", () => {
     const offenders: string[] = [];
     for (const file of sourceFiles(join(process.cwd(), "src"))) {

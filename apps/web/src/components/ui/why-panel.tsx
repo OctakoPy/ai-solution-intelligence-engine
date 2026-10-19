@@ -117,7 +117,7 @@ export function WhyPanel({ solution, className }: WhyPanelProps) {
   const reasons = plainReasons(breakdown, solution);
 
   return (
-    <div className={cn("space-y-3 rounded-lg bg-gray-50 p-3", className)} data-testid="why-panel">
+    <div className={cn("space-y-3 rounded-lg bg-gray-200 p-3", className)} data-testid="why-panel">
       <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Why this</p>
 
       <div>

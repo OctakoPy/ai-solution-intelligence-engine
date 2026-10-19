@@ -119,7 +119,7 @@ export default function FindSolution() {
       </button>
 
       {showIncident && (
-        <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+        <div className="mt-2 rounded-lg border border-gray-200 bg-gray-200 p-3">
           <div className="flex flex-wrap items-end gap-2">
             <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
               Error code
