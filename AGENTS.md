@@ -28,8 +28,9 @@ task explicitly asks to customize the template for a specific project.
   a second tool or parallel configuration.
 - Add or update tests when behavior changes. Update user-facing documentation
   when public APIs, setup steps, or workflows change.
-- Use the lightest planning level in `PLAN.md`: routine work needs no plan file,
-  while durable task plans are copied into `plans/`.
+- Keep planning lightweight: state the goal, context, constraints, and what
+  "done" means in the task itself. Planning notes are working material for the
+  people building the repo — they are local and are never committed.
 - Use one writing agent by default. Delegate only independent, bounded work;
   prefer parallel agents for read-heavy exploration, testing, or review. Give
   parallel writers separate worktrees and non-overlapping ownership.
