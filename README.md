@@ -8,9 +8,9 @@ An AI-powered enterprise knowledge engine that connects ticketing, SAP,
 SharePoint, and knowledge-base systems into one **searchable solution index**.
 It ingests support records, grades them for quality, catches duplicates, and
 retrieves proven fixes for new issues — with a transparent, trust-first
-"why" panel and a **trilingual** (English / Bahasa Malaysia / Chinese) retrieval
-model. Ships with a full Python backend, a React dashboard, and a runnable
-demo dataset.
+"why" panel and a **four-language** (English / Bahasa Malaysia / Chinese /
+Japanese) retrieval model. Ships with a full Python backend, a React
+dashboard, and a runnable demo dataset.
 
 ![Solution Intelligence Engine dashboard](docs/assets/overview.png)
 
@@ -145,13 +145,14 @@ four enterprise source systems:
 
 | Source | IDs | Records |
 | --- | --- | --- |
-| Ticket | `TIC-*` | 59 |
+| Ticket | `TIC-*` | 85 |
 | SAP note | `SAP-*` | 8 |
 | SharePoint doc | `SHA-*` | 6 |
 | Knowledge-base article | `KB_-*` | 5 |
 
-72 records are English; 3 are Bahasa Malaysia and 3 are Chinese (with
-stored English translations) to exercise cross-lingual retrieval.
+92 records are English; 3 are Bahasa Malaysia, 3 are Chinese, and 6 are
+Japanese (with stored English translations) to exercise cross-lingual
+retrieval.
 
 **Try the context panel:** on **Find a Solution**, expand **Incident details
 (optional)** and enter an error code, system, and environment. The engine

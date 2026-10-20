@@ -4,13 +4,14 @@ A step-by-step demo of the Solution Intelligence Engine, run on the whole **104-
 dataset. Questions are phrased as a real support agent would type them, and
 include failing cases to show honest gap handling.
 
-The knowledge base is **trilingual** — English, Bahasa Malaysia (BM), and
-Chinese (中文). An English search surfaces the BM/中文 versions of matching
-problems right alongside the English canons; expand any non-English result to
-reveal a **BM/中文 badge** and a **Translate to English** button.
+The knowledge base is **four-language** — English, Bahasa Malaysia (BM),
+Chinese (中文), and Japanese (日本語). An English search surfaces the
+non-English versions of matching problems right alongside the English canons;
+expand any non-English result to reveal a **language badge** and a **Translate
+to English** button.
 
-Also see the [5-minute walkthrough script](#voiceover-walkthrough-5-min) for a
-non-technical voiceover version.
+Also see the [recorded walkthrough](#recorded-walkthrough-3-min) for the
+non-technical narration version.
 
 ---
 
@@ -66,9 +67,9 @@ catches it as a variant of the known `sap_fi_auth` problem. Shows it generalizes
 
 > the po approval tile is missing from fiori launchpad for a few users after this weeks update
 
-**Expected:** No confident match. Nearest look-alikes (e.g. `TIC-1048`,
-`sap_fiori`) surface at **~0.56 semantic similarity** — far below the ~0.88 of a
-trusted match. No false confidence; the engine escalates to a human.
+**Expected:** No confident match. Nearest look-alikes (e.g. `TIC-1107`,
+`sap_fiori`) surface at **~0.43 semantic similarity** — far below the 0.60
+abstain threshold. No false confidence; the engine escalates to a human.
 
 **Why it's good:** Honest confidence readout instead of a made-up fix. Pilots
 the escalate-to-human path.
@@ -77,8 +78,8 @@ the escalate-to-human path.
 
 > the new quarterly compliance export is coming up and the custom abap program zreport99 keeps erroring. any known fix?
 
-**Expected:** Only nearest neighbors at **~0.59 semantic similarity** (e.g.
-`TIC-1047`, `kb_maintenance` — an outdated KB article, not a match).
+**Expected:** Only nearest neighbors at **~0.41 semantic similarity** (e.g.
+`TIC-1001`, an SAP authorization record — a look-alike, not a match).
 
 **Why it's good:** Reinforces that novel/undocumented issues get an honest
 "low confidence, escalate to human" answer, never a confident fabricated fix.
@@ -110,40 +111,42 @@ standard). Shows cross-source retrieval (tickets + SAP + SharePoint + KB).
 
 > the new quarterly compliance export is coming up and the custom abap program zreport99 keeps erroring. any known fix?
 
-**Expected:** Low-confidence match only (~0.59 semantic similarity to an
-outdated KB article, not a real match). System escalates / recommends manual
-handling rather than fabricate an answer.
+**Expected:** Low-confidence match only (~0.41 semantic similarity, below the
+0.60 abstain threshold). System escalates / recommends manual handling rather
+than fabricate an answer.
 
 ---
 
 ## Multilingual showcase
 
-The engine embeds English, Bahasa Malaysia, and Chinese into one vector space.
-A single **English** query surfaces the **BM and 中文** translations of matching
-problems right alongside the English canons. These appear in **Find a
-Solution**, **Chat** candidates, and as a **badge** on the Pipeline ticket while
-it animates.
+The engine embeds English, Bahasa Malaysia, Chinese, and Japanese into one
+vector space. A single **English** query surfaces the **BM / 中文 / 日本語**
+versions of matching problems right alongside the English canons. These appear
+in **Find a Solution**, **Chat** candidates, and as a **badge** on the Pipeline
+ticket while it animates.
 
-### 1. FI authorization (surfaces BM + 中文 variants)
+### 1. FI authorization (surfaces BM + 中文 + 日本語 variants)
 
 > user cannot access financial reports in sap, authorization error
 
-**Expected hits:** `TIC-1001` (en), `TIC-2004` (中文), plus other SAP auth
-entries. Expand `TIC-2004` → Chinese content + **Translate to English** button
-→ swaps to the English title/description/resolution.
+**Expected hits:** `TIC-1001` (en), `TIC-2001` (BM), `TIC-2004` (中文),
+`TIC-3020` (日本語) — three translations of the same auth canon. Expand
+`TIC-2004` → Chinese content + **Translate to English** button → swaps to the
+English title/description/resolution.
 
 ### 2. VPN (surfaces BM + 中文 variants)
 
 > vpn keeps dropping and will not reconnect
 
-**Expected hits:** `TIC-1008` (en), `TIC-2005` (中文), `TIC-2002` (BM). Expand a
+**Expected hits:** `TIC-1008` (en), `TIC-2002` (BM), `TIC-2005` (中文). Expand a
 BM entry (e.g. `TIC-2002`) → Bahasa Malaysia content → **Translate to English**.
 
-### 3. Account lockout (surfaces BM + 中文 variants)
+### 3. Account lockout (surfaces BM + 中文 + 日本語 variants)
 
 > user locked out of account cannot log in
 
-**Expected hits:** `TIC-1013` (en), `TIC-2006` (中文), `TIC-2003` (BM).
+**Expected hits:** `TIC-1013` (en), `TIC-2003` (BM), `TIC-2006` (中文),
+`TIC-3022` (日本語).
 
 **Demo tip:** For each, expand the non-English result and click **Translate to
 English** — it reveals the full English translation instantly (stored in the
@@ -151,111 +154,134 @@ dataset, not a live translator).
 
 ### Language badges
 
-- **Pipeline:** small `BM` / `中文` badge beside the ticket id while animating.
+- **Pipeline:** small `BM` / `中文` / `日本語` badge beside the ticket id while
+  animating.
 - **Find a Solution / Chat:** badge next to each non-English result title.
 - Expand a non-English result anywhere to get the translate toggle.
 
 ---
 
-## Voiceover walkthrough (5 min)
+## Recorded walkthrough (~3 min)
 
-Run on the whole 104-record dataset. Non-technical narration, dashboard order:
+The current cut is a single continuous take (**3:04**), driven by
+`apps/web/tests/e2e/demo.spec.ts` and narrated by
+[`demo-narration.srt`](demo-narration.srt). Every query below is the exact
+string the recording types, so this section cannot drift from the video.
 
-**Overview → Pipeline → Find a Solution → Chat**
+Dashboard order: **Overview → Pipeline → Find a Solution → Chat → Overview**
 
-Timestamps are targets; adjust to the pacing of your screen recording.
+### 0:00 — Overview
 
-### 0:00 — Overview Page
+**[Screen: Overview, whole 104-record corpus already loaded — there is no
+dataset selector]**
 
-**[Screen: Overview page, sidebar, dataset set to Full 78]**
+"Support teams handle hundreds of incidents every day. Most were solved
+before. The knowledge just isn't connected. So the same fault gets diagnosed
+twice."
 
-"This is the Solution Intelligence Engine. It's a single dashboard where
-support teams can see everything the AI has absorbed — all in one place.
+The status card reads **104 processed · 79 added · 21 rejected · 4 flagged ·
+3.2s average** — the four sources (service desk, SAP, SharePoint, knowledge
+base) ingested in one pass.
 
-Right now we're looking at a full day of work: 104 records processed. That's
-104 real problems pulled in from four different systems — our service desk,
-SAP, SharePoint documents, and the internal knowledge base.
+### 0:13 — Ingestion scale
 
-Notice these three numbers. Out of 104 records, most got **added** to the
-knowledge base so the system can reuse them later. A smaller slice got
-**rejected** — those are duplicates the AI caught automatically, so a
-consultant never has to solve the same thing twice.
+"One hundred and four records, from four real systems. The service desk. SAP.
+SharePoint. And the knowledge base."
 
-And the speed matters. The average processing time sits at about **3.2
-seconds** per record. That's the difference between a user waiting hours for
-a fix and getting one in minutes.
+### 0:20 — Pipeline
 
-Now let me show you how the AI actually decides what to trust."
+**[Screen: Pipeline, press Start]**
 
-### ~0:45 — Pipeline Page
+"Three checks per record. Restricted data never indexed."
 
-**[Screen: switch to Pipeline, press the play button]**
+(The three checks are structural, an AI quality judge, and a near-duplicate
+similarity gate. 79 records are added, 21 rejected as duplicates, and 4
+flagged for a consultant — nothing is silently discarded.)
 
-"The Pipeline is where the engine's judgment happens. Watch closely — each
-ticket gets run through a three-step gauntlet.
+### 0:28 — Find: the context trap
 
-First, a structural check. Does the record have everything a usable solution
-needs? Then an AI quality judge reads the actual text and scores its
-explanatory quality. And last, a similarity check — is this the same problem
-we already solved?
+**[Screen: Find a Solution]**
 
-So for 104 records the pipeline **rejects** the near-duplicates the AI was
-already confident about, and **flags** the gray-zone cases for a human
-consultant to look at. The engine never silently throws anything away — it
-just routes it to the right human attention."
+Search: `goods receipt posting error account determination not found` — the
+`TIC-3011` canonical appears.
 
-### ~1:30 — Find a Solution
+Open **Incident details (optional)** and enter `M8149` · `SAP MM` · `PROD`,
+then search again. Three green **✓ badges** light up (Error code / System /
+Environment).
 
-**[Screen: switch to Find a Solution, type the FI reports query]**
+"Now the interesting part. Same code, test environment. A different root
+cause. That's the trap it avoids."
 
-"Now the fun part. A user calls in: `user can't get into FI reports... getting
-not authorized this morning`. I'll find an existing solution.
+Change Environment to `UAT` and search: `TIC-3012` takes over as the top hit.
 
-The engine parses the semantics and finds the most similar problems people
-have solved before — instantly. Top hit: `TIC-1001`, a near-identical auth
-issue that was **worked 8 out of 8 times**, with a high-confidence readout.
+### 0:52 — Find: four languages
 
-And this is the part I love — I can expand it and get the **why**: a panel
-that breaks the confidence score into its weighted signals, shows the prior
-success rate (worked 8 of 8), lists the supporting records from other source
-systems that corroborate the fix, and flags any caveats. The exact
-step-by-step resolution and the system it came from are right below.
+Clear the incident detail, then search:
+`user cannot access financial reports in sap, authorization error`
 
-Now watch the bottom of the list. The engine is multilingual — that English
-query just surfaced Bahasa Malaysia and Chinese translations of the same auth
-fix."
+`TIC-1001` (en), `TIC-2001` (BM), `TIC-2004` (中文), and `TIC-3020` (日本語)
+appear together. Open the Chinese card and press **Translate to English**.
 
-### ~2:30 — Chat
+"English, Malay, Chinese, and now Japanese. Translate the Chinese one and
+it's the same fix."
 
-**[Screen: switch to Chat, type the refresh follow-up]**
+### 1:09 — Find: consultant vocabulary, and an honest decline
 
-"Finally, the conversational layer. Once I'm on a solution I can keep asking:
-`how exactly do i fix the authorization?`. The engine re-ranks its candidates
-using the follow-up, and walks me through the role assignment — step by step —
-while keeping the full source handy.
+Clear again, then search:
+`production order will not create component allocation incomplete`
 
-No hallucinated answers, no hunting across four systems. Just the fix, the
-proof it worked before, and the steps to do it."
+Top hit `TIC-1108` — **worked 12 of 12**.
 
-### ~3:30 — Honest gap handling
+Then search: `nightly mrp background job failing after release update`
 
-**[Screen: Find a Solution, type the `zreport99` query]**
+`TIC-1106` (**7 of 9**) is below the trusted floor, so the engine shows
+**Check not satisfied** rather than recommend it. Same category, different
+record history.
 
-"Because trust matters most when the answer ISN'T in the knowledge base. Try
-something brand new: `the custom abap program zreport99 keeps erroring`.
+Optionally open **Show scoring detail** on a result — the confidence readout
+breaks into weighted signals, prior success, and corroborating records.
 
-No confident match. The engine doesn't bluff — it shows its closest
-look-alikes at full confidence, all graded well below the trusted threshold,
-so the human knows this needs a manual fix and an escalation instead of a
-made-up answer."
+### 1:32 — Chat: a plain question
 
-### ~3:55 — Close
+**[Screen: Chat]**
 
-**[Screen: back on Overview]**
+Ask: `I forgot my password and cannot log in to my computer` — answered
+directly, **worked 45 of 45**.
 
-"That's the Solution Intelligence Engine — structured ingestion, honest
-confidence, multilingual retrieval, and a human in the loop, so support teams
-solve once and reuse forever."
+### 1:44 — Chat: too vague, so it declines
+
+New chat, ask: `finance user cannot open the report`
+
+**Check not satisfied**, and no ticket numbers or success counts are shown as
+evidence for a recommendation that was not made.
+
+Then add what you know: `error code S_RS_COMP, module SAP FICO, environment
+PROD` — now it commits, **worked 8 of 8**. Nothing changed but the evidence.
+
+### 2:09 — Chat: the first fix failed
+
+New chat, ask: `my email is not arriving`, then: `that did not work, still
+nothing`
+
+It rules that fix out (`Ruling that out: Outlook not syncing new emails`) and
+offers a different one (`Cannot send emails with large attachments`) instead
+of repeating itself.
+
+### 2:32 — Chat: not only troubleshooting
+
+New chat, ask: `a new starter needs a laptop for their first day` — it pulls
+the official **New Employee Laptop Setup** standard procedure.
+
+### 2:46 — Chat: something it should not answer
+
+New chat, ask: `i ran out of milk in my house` — no match exists, so it
+declines. That refusal is the feature.
+
+### 2:58 — Close
+
+**[Screen: back on Overview, Resolution Memory panel]**
+
+"Two ways in. Both transparent. Both say when they don't know."
 
 ---
 

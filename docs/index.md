@@ -3,14 +3,15 @@
 An AI-powered enterprise knowledge engine that ingests records from tickets,
 SAP, SharePoint, and knowledge-base systems, grades them for quality, catches
 near-duplicates, and surfaces **proven** solutions — with a transparent
-"why" panel and trilingual (English / Bahasa Malaysia / Chinese) retrieval.
+"why" panel and four-language (English / Bahasa Malaysia / Chinese / Japanese)
+retrieval.
 
 ![Solution Intelligence Engine dashboard](assets/overview.png)
 
 ## Start here
 
-- **Try it** — the [demo script](tutorials/demo-script.md) walks through 78
-  demo records query by query.
+- **Try it** — the [demo script](tutorials/demo-script.md) walks through the
+  104-record corpus query by query.
 - **Use it** — set up and run the engine in the [how-to guide](how-to/index.md).
 - **Understand it** — see the reasoning behind confidence scores, duplicate
   checks, and human-in-the-loop review in the [explanation](explanation/index.md).
